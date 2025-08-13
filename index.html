@@ -156,6 +156,12 @@ let timeRemaining = LEVEL_TIME;
 let gameRunning = false;
 let respawning = false;
 
+  // Images
+const imgRenard = new Image();
+const imgGrenouille = new Image();
+imgRenard.src   = 'https://png.pngtree.com/png-vector/20240814/ourmid/pngtree-realistic-fox-head-illustration-png-image_13481187.png';
+imgGrenouille.src = 'https://png.pngtree.com/png-vector/20250109/ourlarge/pngtree-realistic-green-frog-with-smooth-skin-and-lifelike-texture-png-image_15076823.png';
+
 /* =======================
    UTILS
 ======================= */
@@ -200,18 +206,35 @@ function generateGhosts(){
 /* =======================
    DESSIN
 ======================= */
-function drawLabyrinth(){
-  for(let r=0;r<rows;r++){
-    for(let c=0;c<cols;c++){
-      const t=labyrinth[r][c];
-      if(t===1){ ctx.fillStyle='#800000'; ctx.fillRect(c*scale,r*scale,scale,scale);}
-      else if(t===3){ ctx.fillStyle='#aa6600'; ctx.fillRect(c*scale,r*scale,scale,scale);}
-      else if(t===0){ ctx.fillStyle='green'; ctx.fillRect(c*scale+scale*0.1,r*scale+scale*0.1,scale*0.8,scale*0.8);}
+function drawLabyrinth() {
+  for (let r=0; r<rows; r++) {
+    for (let c=0; c<cols; c++) {
+      const t = labyrinth[r][c];
+      if (t === 1) { // mur
+        ctx.fillStyle = '#800000';
+        ctx.fillRect(c*scale, r*scale, scale, scale);
+      } else if (t === 3) { // mur cassable (si tu l'actives un jour)
+        ctx.fillStyle = '#aa6600';
+        ctx.fillRect(c*scale, r*scale, scale, scale);
+      } else if (t === 0) { // grenouille
+        if (imgGrenouille.complete) {
+          ctx.drawImage(imgGrenouille, c*scale + scale*0.1, r*scale + scale*0.1, scale*0.8, scale*0.8);
+        }
+      }
     }
   }
 }
 
-function drawPlayer(){ ctx.fillStyle='#ff6600'; ctx.fillRect(player.xPos,player.yPos,scale,scale); }
+function drawPlayer() {
+  if (imgRenard.complete) {
+    ctx.drawImage(imgRenard, player.xPos, player.yPos, scale, scale);
+  } else {
+    ctx.fillStyle = '#ff6600';
+    ctx.beginPath();
+    ctx.arc(player.xPos + scale/2, player.yPos + scale/2, scale/2 - 4, 0, Math.PI*2);
+    ctx.fill();
+  }
+}                     
 function drawGhosts(){ ghosts.forEach(g=>{ ctx.fillStyle=g.color; ctx.fillRect(g.xPos,g.yPos,scale,scale); }); }
 
 /* =======================
