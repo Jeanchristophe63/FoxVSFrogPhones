@@ -217,15 +217,19 @@ function drawGhosts(){ ghosts.forEach(g=>{ ctx.fillStyle=g.color; ctx.fillRect(g
 /* =======================
    LOGIQUE
 ======================= */
-function movePlayer(){
-  if(!player.moving) return;
-  const tx=player.x*scale, ty=player.y*scale;
-  if(player.xPos<tx) player.xPos=Math.min(player.xPos+PLAYER_SPEED,tx);
-  else if(player.xPos>tx) player.xPos=Math.max(player.xPos-PLAYER_SPEED,tx);
-  if(player.yPos<ty) player.yPos=Math.min(player.yPos+PLAYER_SPEED,ty);
-  else if(player.yPos>ty) player.yPos=Math.max(player.yPos-PLAYER_SPEED,ty);
-  if(player.xPos===tx && player.yPos===ty){ player.moving=false; if(labyrinth[player.y][player.x]===0){ labyrinth[player.y][player.x]=2; score++; updateScore(); } }
-}
+function movePlayerDirection(dir) {
+  if (!gameRunning || player.moving) return;
+  let nx = player.x, ny = player.y;
+  if (dir === 'up') ny--;
+  else if (dir === 'down') ny++;
+  else if (dir === 'left') nx--;
+  else if (dir === 'right') nx++;
+  if (canMove(nx, ny)) {
+    player.x = nx;
+    player.y = ny;
+    player.moving = true;
+    player.dir = dir;
+  }
 
 function moveGhosts(){
   ghosts.forEach(g=>{
