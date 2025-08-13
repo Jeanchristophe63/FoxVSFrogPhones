@@ -140,10 +140,10 @@ const startBtn = document.getElementById('startBtn');
 const scaleInput = document.getElementById('scale');
 const ghostCountSel = document.getElementById('ghostCount');
 
-const mobileUp = document.getElementById('up');
-const mobileDown = document.getElementById('down');
-const mobileLeft = document.getElementById('left');
-const mobileRight = document.getElementById('right');
+const mobileUp = document.getElementById('upBtn').addEventListener('touchstart', () => movePlayerDirection('up'));
+const mobileDown = document.getElementById('downBtn').addEventListener('touchstart', () => movePlayerDirection('down'));
+const mobileLeft = document.getElementById('leftBtn').addEventListener('touchstart', () => movePlayerDirection('left'));
+const mobileRight = document.getElementById('rightBtn').addEventListener('touchstart', () => movePlayerDirection('right'));
 
 let scale = parseInt(scaleInput.value);
 let labyrinth = [];
