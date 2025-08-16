@@ -270,13 +270,16 @@ function drawLabyrinth() {
           ctx.drawImage(imgGrenouille, c*scale + scale*0.1, r*scale + scale*0.1, scale*0.8, scale*0.8);
         }
       } 
-      else if (t === 2) {     // vide / fond
-        ctx.fillStyle = '#ccc';
-        ctx.fillRect(c*scale, r*scale, scale, scale);
+      else if (t === 0) {     // vide
+  ctx.fillStyle = '#ccc';
+  ctx.fillRect(c*scale, r*scale, scale, scale);
+  if(imgGrenouille.complete){
+    ctx.drawImage(imgGrenouille, c*scale + scale*0.1, r*scale + scale*0.1, scale*0.8, scale*0.8);
+  }
+}
       }
     }
   }
-}
 function drawPlayer(){ if(imgRenard.complete){ ctx.drawImage(imgRenard,player.xPos,player.yPos,scale,scale); } else { ctx.fillStyle='#ff6600'; ctx.beginPath(); ctx.arc(player.xPos+scale/2,player.yPos+scale/2,scale/2-4,0,Math.PI*2); ctx.fill(); } }
 function drawGhosts(){ ghosts.forEach(g=>{ const gx=g.xPos+scale/2; const gy=g.yPos+scale/2; ctx.fillStyle=g.color; ctx.beginPath(); ctx.arc(gx,gy,scale/2-4,0,Math.PI*2); ctx.fill(); ctx.fillStyle='#fff'; ctx.font=`bold ${Math.floor(scale/2)}px monospace`; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('R2',gx,gy); }); }
 
@@ -285,7 +288,6 @@ function drawGhosts(){ ghosts.forEach(g=>{ const gx=g.xPos+scale/2; const gy=g.y
 ======================= */
 function movePlayer(){
   if(!player.moving) return;
-
   const tx = player.x * scale;
   const ty = player.y * scale;
 
@@ -327,11 +329,10 @@ function handleKeyDown(e) { // ajouter
 
   if (tile === 1) return; // mur classique : bloqué
 
-  if (tile === 3 || tile === 4 || tile === 5) { // mur cassable
-    hitWall(nx, ny); 
-    // Bloque le joueur jusqu'à ce que le mur soit détruit
-    if (labyrinth[ny][nx] !== 2) return;
-  }
+  if (tile === 3 || tile === 4 || tile === 5) {
+  hitWall(nx, ny);
+  if (labyrinth[ny][nx] !== 2) return; // bloqué tant que mur pas détruit
+}
 
   // Déplacement du joueur autorisé
   player.x = nx;
@@ -339,10 +340,18 @@ function handleKeyDown(e) { // ajouter
   player.moving = true;
   player.dir = e.key.replace('Arrow','').toLowerCase();
 }
-  function hitWall(x, y) {   // ajouter
+  function hitWall(x, y) {
   const key = `${x},${y}`;
   if (!damageMap[key]) damageMap[key] = 0;
   damageMap[key]++;
+
+  if (damageMap[key] === 1) labyrinth[y][x] = 4;      // 1er coup → noir
+  else if (damageMap[key] === 2) labyrinth[y][x] = 5; // 2e coup → orange
+  else if (damageMap[key] >= WALL_HITS_REQUIRED) {
+    labyrinth[y][x] = 2; // mur cassé → fond vide
+    delete damageMap[key];
+  }
+}
 
   // changer le tile selon les coups
   if (damageMap[key] === 1) labyrinth[y][x] = 4;       // 1er coup → noir
