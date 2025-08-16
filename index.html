@@ -14,7 +14,7 @@
   input, select, button { font-size:16px; padding:6px 10px; }
   #timer { font-size:20px; margin:6px 0 10px; font-weight:bold; }
   #mobile-controls { margin:10px 0; display:flex; justify-content:center; gap:6px; flex-wrap:wrap; }
-  #mobile-controls button { width:120px; height:100px; font-size:80px; }
+  #mobile-controls button { width:120px; height:90px; font-size:80px; }
 
   html, body {
   touch-action: manipulation; /* empêche zoom/pinch et certains gestes */
@@ -54,7 +54,7 @@ input, select, textarea {
 
 <div id="controls">
   <label for="scale">Zoom :</label>
-  <input type="number" id="scale" value="25" min="16" max="64" step="4" />
+  <input type="number" id="scale" value="26" min="16" max="64" step="4" />
   <label for="ghostCount">Fantômes (2–5) :</label>
   <select id="ghostCount">
     <option value="2">2</option>
@@ -65,7 +65,7 @@ input, select, textarea {
   <button id="startBtn">Démarrer</button>
 </div>
 
-<div id="timer">Temps restant : 02:30</div>
+<div id="timer">Temps restant : 02:40</div>
 <div id="MaJ">!! Mis à jour le 16/08/25 !!</div>
 <div id="score">Score : 0 | Vies : 3</div>
 <div id="game-container">
@@ -198,6 +198,7 @@ let timeRemaining = LEVEL_TIME;
 let gameRunning = false;
 let respawning = false;
 let totalFrogs = 0;
+let effects = [];
 
 const imgRenard = new Image();
 const imgGrenouille = new Image();
@@ -303,7 +304,24 @@ function drawPlayer() {
   } 
 }
 function drawGhosts(){ ghosts.forEach(g=>{ const gx=g.xPos+scale/2; const gy=g.yPos+scale/2; ctx.fillStyle=g.color; ctx.beginPath(); ctx.arc(gx,gy,scale/2-4,0,Math.PI*2); ctx.fill(); ctx.fillStyle='#fff'; ctx.font=`bold ${Math.floor(scale/2)}px monospace`; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('R2',gx,gy); }); }
+function drawEffects(ctx) {
+  for (let i = effects.length - 1; i >= 0; i--) {
+    const e = effects[i];
+    ctx.fillStyle = "rgba(255,0,0," + (e.life / 10) + ")";
+    ctx.fillRect(e.x * scale, e.y * scale, scale, scale);
+    e.life--;
+    if (e.life <= 0) effects.splice(i, 1);
+  }
+}
+  function drawGame() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+  drawLabyrinth();
+  drawPlayer();
+  drawGhosts();
+
+  // effets par-dessus
+  drawEffects(ctx);
 /* =======================
    LOGIQUE
 ======================= */
@@ -351,13 +369,13 @@ function handleKeyDown(e) {
 
   if (tile === undefined) return; // dehors
 
-  // Si c'est un mur cassable
+  // 👉 Blocage + gestion murs cassables
   if (tile === 3 || tile === 4 || tile === 5) {
-    hitWall(nx, ny); 
-    if (labyrinth[ny][nx] !== 0) return; // reste bloqué tant que pas détruit
+    hitWall(nx, ny);            // on tape dans le mur
+    if (labyrinth[ny][nx] !== 0) return; // on ne passe pas tant que le mur n’est pas détruit
   }
 
-  // Vérifie si passage possible
+  // 👉 Ici seulement le déplacement
   if (canMove(nx, ny)) {
     player.x = nx;
     player.y = ny;
@@ -371,15 +389,21 @@ function handleKeyDown(e) {
   return t !== undefined && t !== 1; // bloque uniquement les murs normaux
 }
  function hitWall(x, y) {
-  const key = `${x},${y}`;
-  if (!damageMap[key]) damageMap[key] = 0;
-  damageMap[key]++;
+  let tile = labyrinth[y][x];
 
-  if(damageMap[key] === 1) labyrinth[y][x] = 4;      // 1er coup → noir
-  else if(damageMap[key] === 2) labyrinth[y][x] = 5; // 2e coup → orange
-  else if(damageMap[key] >= WALL_HITS_REQUIRED) {    // 3e coup → mur détruit
-    labyrinth[y][x] = 0; 
-    delete damageMap[key];
+  if (tile === 3) {
+    labyrinth[y][x] = 4; // première fissure
+  } else if (tile === 4) {
+    labyrinth[y][x] = 5; // mur plus abîmé
+  } else if (tile === 5) {
+    labyrinth[y][x] = 0; // mur détruit
+
+    // 👉 Ajout d'un effet visuel
+    effects.push({ x, y, life: 10 });
+
+    // 👉 (optionnel) jouer un son
+    // let sound = new Audio("explosion.mp3");
+    // sound.play();
   }
 }
   
