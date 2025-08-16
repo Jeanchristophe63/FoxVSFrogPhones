@@ -65,7 +65,7 @@ input, select, textarea {
   <button id="startBtn">Démarrer</button>
 </div>
 
-<div id="timer">Temps restant : 02:30</div>
+<div id="timer">Temps restant : 02:00</div>
 <div id="MaJ">!! Mis à jour le 16/08/25 !!</div>
 <div id="score">Score : 0 | Vies : 3</div>
 <div id="game-container">
@@ -102,7 +102,7 @@ const rows = 15, cols = 14;
 
 const labyrinths = [
   [ // Labyrinthe 1
-    [1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    [3,1,1,1,1,1,1,1,1,1,1,1,1,3],
     [1,0,0,0,0,0,0,0,0,0,0,0,0,1],
     [1,0,1,1,1,1,1,1,1,1,1,0,0,1],
     [1,0,1,0,0,0,0,0,0,0,3,0,0,1],
@@ -116,7 +116,7 @@ const labyrinths = [
     [1,0,0,0,0,0,0,0,1,0,1,0,1,1],
     [1,0,1,1,1,1,1,1,1,0,1,0,0,1],
     [1,0,0,0,0,0,3,0,0,0,0,0,0,1],
-    [1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+    [3,1,1,1,1,1,1,1,1,1,1,1,1,3]
   ],
   [ // Labyrinthe 2
     [1,1,1,1,1,1,1,1,1,1,1,1,1,1],
@@ -198,7 +198,8 @@ let timeRemaining = LEVEL_TIME;
 let gameRunning = false;
 let respawning = false;
 let totalFrogs = 0;
-let effects = [];
+let labyrinthTimes = []; // pour stocker le temps passé sur chaque labyrinthe
+let startTime = 0;       // timestamp au début du labyrinthe
 
 const imgRenard = new Image();
 const imgGrenouille = new Image();
@@ -441,6 +442,7 @@ function startGame(){
   currentLabIndex = 0; // recommence au niveau 0
   currentLevel = 0; // <-- ajouter
   gameRunning = true;
+  startTime = Date.now(); // mémorise le début du labyrinthe
   generateLabyrinth();
   updateScore();
   resizeCanvas();
@@ -467,7 +469,9 @@ function showPopup(message = "🎉 Bravo, labyrinthe terminé ! \nEt au faite \n
 function nextLevel() {
   document.getElementById("popup").style.display = "none";
   currentLevel++;
-
+  startTime = Date.now(); // mémorise le début du labyrinthe
+  let elapsed = Math.floor((Date.now() - startTime) / 1000); // en secondes
+labyrinthTimes.push(elapsed);
   if(currentLevel < levels.length){
     // Charger le niveau suivant
     currentLabIndex = currentLevel;
@@ -476,6 +480,21 @@ function nextLevel() {
     score = 0;        
     lives = 3;        
     updateScore();
+    if(currentLevel >= levels.length){
+  let message = "🏆 Tournoi terminé 🏆!\nLes Grenouilles sont éradiquées !!\n\nTemps par labyrinthe :\n";
+  labyrinthTimes.forEach((t,i)=>{
+    let min = Math.floor(t/60).toString().padStart(2,'0');
+    let sec = (t%60).toString().padStart(2,'0');
+    message += `Labyrinthe ${i+1} : ${min}:${sec}\n`;
+  });
+  message += "\nBisous😘";
+  showPopup(message);
+
+  // reset
+  score = 0; lives = 0; currentLevel = 0; currentLabIndex = 0;
+  labyrinthTimes = [];
+  stopGame();
+}
 
     // Réinitialiser le timer
     timeRemaining = LEVEL_TIME;
