@@ -238,6 +238,11 @@ function generateGhosts(){
     ghosts.push({x,y,xPos:x*scale,yPos:y*scale,dir:'left',color:palette[i%palette.length],moving:false});
   }
 }
+  while((!canMove(x,y) || (x===player.x && y===player.y)) && tries<30){
+  x=clamp(x+(Math.random()<0.5?-1:1),1,cols-2);
+  y=clamp(y+(Math.random()<0.5?-1:1),1,rows-2);
+  tries++;
+}
 
 /* =======================
    DESSIN
@@ -296,7 +301,19 @@ function mobileControl(dir){ if(player.moving||respawning) return; let nx=player
 /* =======================
    DÉMARRAGE / STOP
 ======================= */
-function startGame(){ gameRunning=true; generateLabyrinth(); updateScore(); resizeCanvas(); if(gameInterval) clearInterval(gameInterval); gameInterval=setInterval(gameLoop,40); if(timerInterval) clearInterval(timerInterval); startTimer(); }
+function startGame(){
+  lives = 3;           // réinitialise les vies
+  score = 0;           // réinitialise le score
+  currentLabIndex = 0; // recommence au niveau 0
+  gameRunning = true;
+  generateLabyrinth();
+  updateScore();
+  resizeCanvas();
+  if(gameInterval) clearInterval(gameInterval);
+  gameInterval=setInterval(gameLoop,40);
+  if(timerInterval) clearInterval(timerInterval);
+  startTimer();
+}
 function stopGame(){ gameRunning=false; if(gameInterval) clearInterval(gameInterval); if(timerInterval) clearInterval(timerInterval); }
 
 /* =======================
