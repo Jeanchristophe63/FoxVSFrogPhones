@@ -59,6 +59,7 @@
 </div>
 
 <div id="timer">Temps restant : 02:40</div>
+<div id="MaJ">!! Mis à jour le 16/08/25 !!</div>
 <div id="score">Score : 0 | Vies : 3</div>
 <div id="game-container">
   <canvas id="game"></canvas>
@@ -259,15 +260,15 @@ function drawLabyrinth() {
         ctx.fillRect(c*scale, r*scale, scale, scale);
       } 
       else if (t === 3) {     // mur cassable initial
-        ctx.fillStyle = '#aa6600';
+        ctx.fillStyle = '#000000'; // noir
         ctx.fillRect(c*scale, r*scale, scale, scale);
       } 
       else if (t === 4) {     // 1er coup
-        ctx.fillStyle = '#000';
+        ctx.fillStyle = '#ff0000'; // rouge
         ctx.fillRect(c*scale, r*scale, scale, scale);
       } 
       else if (t === 5) {     // 2e coup
-        ctx.fillStyle = 'orange';
+        ctx.fillStyle = '#ff6600'; // orange
         ctx.fillRect(c*scale, r*scale, scale, scale);
       } 
       else if (t === 2) {     // grenouille
@@ -356,9 +357,9 @@ function handleKeyDown(e) {
   player.dir = e.key.replace('Arrow','').toLowerCase();
 }
 
-  function canMove(x,y){ 
+  function canMove(x, y) {
   const t = labyrinth[y]?.[x];
-  return t !== undefined && t !== 1; // 1 = mur classique
+  return t !== undefined && t !== 1 && t !== 3; // bloquer murs classiques ET cassables
 }
  function hitWall(x, y) {
   const key = `${x},${y}`;
