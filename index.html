@@ -58,7 +58,7 @@
   <button id="startBtn">Démarrer</button>
 </div>
 
-<div id="timer">Temps restant : 02:40</div>
+<div id="timer">Temps restant : 02:30</div>
 <div id="MaJ">!! Mis à jour le 16/08/25 !!</div>
 <div id="score">Score : 0 | Vies : 3</div>
 <div id="game-container">
@@ -84,7 +84,7 @@
 /* =======================
    PARAMÈTRES
 ======================= */
-const PLAYER_SPEED = 160;
+const PLAYER_SPEED = 200;
 const GHOST_SPEED = 2;
 const FROG_SPAWN_RATE = 99;
 const LEVEL_TIME = 150;
@@ -449,7 +449,7 @@ function nextLevel() {
 let lastTouchEnd = 0;
 document.addEventListener('touchend', function (event) {
   const now = Date.now();
-  if (now - lastTouchEnd <= 415) event.preventDefault();
+  if (now - lastTouchEnd <= 400) event.preventDefault();
   lastTouchEnd = now;
 }, false);
 
