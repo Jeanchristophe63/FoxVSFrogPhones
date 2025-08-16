@@ -65,7 +65,7 @@ input, select, textarea {
   <button id="startBtn">Démarrer</button>
 </div>
 
-<div id="timer">Temps restant : 02:35</div>
+<div id="timer">Temps restant : 02:30</div>
 <div id="MaJ">!! Mis à jour le 16/08/25 !!</div>
 <div id="score">Score : 0 | Vies : 3</div>
 <div id="game-container">
@@ -385,7 +385,33 @@ function handleKeyDown(e) {
 }
   
 function moveGhosts(){ ghosts.forEach(g=>{ if(g.moving){ const tx=g.x*scale, ty=g.y*scale; g.xPos=g.xPos<tx?Math.min(g.xPos+GHOST_SPEED,tx):Math.max(g.xPos-GHOST_SPEED,tx); g.yPos=g.yPos<ty?Math.min(g.yPos+GHOST_SPEED,ty):Math.max(g.yPos-GHOST_SPEED,ty); if(g.xPos===tx && g.yPos===ty) g.moving=false; } else { const dirs=['left','right','up','down']; let options=dirs.filter(d=>{ let nx=g.x, ny=g.y; if(d==='left') nx--; else if(d==='right') nx++; else if(d==='up') ny--; else if(d==='down') ny++; return canMove(nx,ny); }); if(options.length>1){ const opp={left:'right',right:'left',up:'down',down:'up'}; options=options.filter(d=>d!==opp[g.dir]); if(options.length===0) options=dirs;} if(options.length){ g.dir=options[Math.floor(Math.random()*options.length)]; if(g.dir==='left') g.x--; else if(g.dir==='right') g.x++; else if(g.dir==='up') g.y--; else if(g.dir==='down') g.y++; g.moving=true; } } }); }
-function checkCollision(){ if(respawning) return; for(const g of ghosts){ if(Math.abs(g.x-player.x)+Math.abs(g.y-player.y)===0){ lives--; updateScore(); if(lives<=0){ alert('Game Over !'); stopGame(); return;} respawning=true; setTimeout(()=>{ player.x=1; player.y=1; player.xPos=player.x*scale; player.yPos=player.y*scale; respawning=false; },500); } } }
+function checkCollision() {
+  if(respawning) return;
+  for(const g of ghosts){
+    if(Math.abs(g.x-player.x)+Math.abs(g.y-player.y)===0){
+      lives--;
+      updateScore();
+
+      // Vibration perte de vie
+      if(navigator.vibrate) navigator.vibrate([100,50,100]);
+
+      if(lives<=0){
+        alert('Game Over !');
+        stopGame();
+        return;
+      }
+
+      respawning=true;
+      setTimeout(()=>{
+        player.x=1; 
+        player.y=1; 
+        player.xPos=player.x*scale; 
+        player.yPos=player.y*scale; 
+        respawning=false;
+      },500);
+    }
+  }
+}
 
 function gameLoop(){ ctx.clearRect(0,0,canvas.width,canvas.height); drawLabyrinth(); drawPlayer(); drawGhosts(); movePlayer(); moveGhosts(); checkCollision(); }
 
@@ -406,6 +432,7 @@ function startGame(){
   lives = 3;           // réinitialise les vies
   score = 0;           // réinitialise le score
   currentLabIndex = 0; // recommence au niveau 0
+  currentLevel = 0; // <-- ajouter
   gameRunning = true;
   generateLabyrinth();
   updateScore();
