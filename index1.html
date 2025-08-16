@@ -235,7 +235,22 @@ function drawPlayer() {
     ctx.fill();
   }
 }                     
-function drawGhosts(){ ghosts.forEach(g=>{ ctx.fillStyle=g.color; ctx.fillRect(g.xPos,g.yPos,scale,scale); }); }
+function drawGhosts() {
+  ghosts.forEach(g => {
+    const gx = g.xPos + scale/2;
+    const gy = g.yPos + scale/2;
+    ctx.fillStyle = g.color;
+    ctx.beginPath();
+    ctx.arc(gx, gy, scale/2 - 4, 0, Math.PI*2);
+    ctx.fill();
+
+    ctx.fillStyle = '#fff';
+    ctx.font = `bold ${Math.floor(scale/2)}px monospace`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('R2', gx, gy);
+  });
+}
 
 /* =======================
    LOGIQUE
@@ -288,6 +303,59 @@ function startTimer(){
     if(timeRemaining<=0){ alert('Temps écoulé !'); stopGame(); }
   },1000);
 }
+
+  /* =======================
+   VICTOIRE
+======================= */
+function checkWin(){  // >>> AJOUT
+  for(let r=0;r<rows;r++){
+    for(let c=0;c<cols;c++){
+      if(labyrinth[r][c]===0){ // encore une grenouille
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+function handleWin(){  // >>> AJOUT
+  if(currentLabIndex < labyrinths.length-1){
+    alert(`Bravo ! Labyrinthe ${currentLabIndex+1} terminé, tu as baisé toute les grenouilles, passage au suivant !`);
+    currentLabIndex++;
+    generateLabyrinth();
+    updateScore();
+    resizeCanvas();
+    timeRemaining = LEVEL_TIME; // reset chrono
+  } else {
+    alert("🎉 Félicitations, vous avez terminé les 4 labyrinthes ! Jeu terminé, les grenouilles sont éradiqués !!.");
+    stopGame();
+  }
+}
+
+/* =======================
+   LOGIQUE
+======================= */
+function movePlayer(){
+  if(!player.moving) return;
+  const tx=player.x*scale, ty=player.y*scale;
+  if(player.xPos<tx) player.xPos=Math.min(player.xPos+PLAYER_SPEED,tx);
+  else if(player.xPos>tx) player.xPos=Math.max(player.xPos-PLAYER_SPEED,tx);
+  if(player.yPos<ty) player.yPos=Math.min(player.yPos+PLAYER_SPEED,ty);
+  else if(player.yPos>ty) player.yPos=Math.max(player.yPos-PLAYER_SPEED,ty);
+
+  if(player.xPos===tx && player.yPos===ty){
+    player.moving=false;
+    if(labyrinth[player.y][player.x]===0){
+      labyrinth[player.y][player.x]=2;
+      score++;
+      updateScore();
+      if(checkWin()){   // >>> AJOUT
+        handleWin();
+      }
+    }
+  }
+}
+
 
 /* =======================
    CONTRÔLES
