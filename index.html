@@ -399,6 +399,70 @@ function stopGame(){
   if(gameInterval) clearInterval(gameInterval);
   if(timerInterval) clearInterval(timerInterval);
 }
+
+   #popup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0,0,0,0.9);
+    color: white;
+    padding: 20px 40px;
+    border-radius: 12px;
+    font-size: 20px;
+    display: none; /* caché au départ */
+    z-index: 9999;
+    text-align: center;
+    animation: fadeIn 0.4s ease;
+  }
+  #popup button {
+    margin-top: 15px;
+    padding: 8px 16px;
+    background: #ff9800;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    color: white;
+    font-size: 16px;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translate(-50%, -60%); }
+    to   { opacity: 1; transform: translate(-50%, -50%); }
+  }
+</style>
+
+<div id="popup">
+  <p id="popupMessage">🎉 Bravo, labyrinthe terminé !</p>
+  <button onclick="nextLevel()">Continuer</button>
+</div>
+
+<script>
+  let currentLevel = 0; // index du labyrinthe actuel
+  const levels = [labyrinthe1, labyrinthe2, labyrinthe3, labyrinthe4]; 
+  // ^^^ tableau de tes maps de jeu (déjà définies dans ton code)
+
+  function showPopup(message="🎉 Bravo, labyrinthe terminé !") {
+    document.getElementById("popupMessage").textContent = message;
+    document.getElementById("popup").style.display = "block";
+  }
+
+  function nextLevel() {
+    document.getElementById("popup").style.display = "none";
+
+    currentLevel++;
+    if (currentLevel < levels.length) {
+      chargerLabyrinthe(levels[currentLevel]); 
+    } else {
+      // si tous les labyrinthes sont finis
+      showPopup("🏆 Tournoi terminé !");
+      document.querySelector("#popup button").style.display = "none"; 
+    }
+  }
+
+  // Exemple d’appel quand Pacman mange toutes les gommes :
+  function finDeLabyrinthe() {
+    showPopup(); // affiche le popup au lieu d’un alert()
+  }
 /* =======================
    Désactive double clic zoom
 ======================= */
