@@ -58,7 +58,7 @@
   <button id="startBtn">Démarrer</button>
 </div>
 
-<div id="timer">Temps restant : 02:40</div>
+<div id="timer">Temps restant : 02:30</div>
 <div id="score">Score : 0 | Vies : 3</div>
 <div id="game-container">
   <canvas id="game"></canvas>
@@ -86,7 +86,7 @@
 const PLAYER_SPEED = 160;
 const GHOST_SPEED = 2;
 const FROG_SPAWN_RATE = 99;
-const LEVEL_TIME = 160;
+const LEVEL_TIME = 150;
 const DEFAULT_NUM_GHOSTS = 2;
 const WALL_HITS_REQUIRED = 3; // nombre de coups nécessaires pour casser un mur
 const damageMap = {};
@@ -302,17 +302,20 @@ function drawGhosts(){ ghosts.forEach(g=>{ const gx=g.xPos+scale/2; const gy=g.y
 ======================= */
 function movePlayer(){
   if(!player.moving) return;
+
   const tx = player.x * scale;
   const ty = player.y * scale;
 
   // Déplacement fluide
-  if(player.xPos < tx) player.xPos = Math.min(player.xPos + PLAYER_SPEED, tx);
-  else if(player.xPos > tx) player.xPos = Math.max(player.xPos - PLAYER_SPEED, tx);
-  if(player.yPos < ty) player.yPos = Math.min(player.yPos + PLAYER_SPEED, ty);
-  else if(player.yPos > ty) player.yPos = Math.max(player.yPos - PLAYER_SPEED, ty);
+  if(player.xPos < tx) player.xPos = Math.min(player.xPos + PLAYER_SPEED*0.04, tx);
+  else if(player.xPos > tx) player.xPos = Math.max(player.xPos - PLAYER_SPEED*0.04, tx);
+  if(player.yPos < ty) player.yPos = Math.min(player.yPos + PLAYER_SPEED*0.04, ty);
+  else if(player.yPos > ty) player.yPos = Math.max(player.yPos - PLAYER_SPEED*0.04, ty);
 
   // Arrivé sur la case
-  if(player.xPos === tx && player.yPos === ty){
+  if(Math.abs(player.xPos - tx) < 1 && Math.abs(player.yPos - ty) < 1){
+    player.xPos = tx;
+    player.yPos = ty;
     player.moving = false;
 
     // Ramasser la grenouille si présente
@@ -327,7 +330,7 @@ function movePlayer(){
     }
   }
 }
-function handleKeyDown(e) { // ajouter
+function handleKeyDown(e) {
   if (!gameRunning || player.moving) return;
 
   let nx = player.x, ny = player.y;
@@ -337,18 +340,16 @@ function handleKeyDown(e) { // ajouter
   else if (e.key === 'ArrowDown') ny++;
   else return;
 
-  if (!labyrinth[ny] || labyrinth[ny][nx] == null) return;
+  const tile = labyrinth[ny]?.[nx];
+  if(tile === undefined || tile === 1) return; // mur normal : bloqué
 
-  const tile = labyrinth[ny][nx];
+  // Mur cassable
+  if(tile === 3 || tile === 4 || tile === 5){
+    hitWall(nx, ny); 
+    if(labyrinth[ny][nx] !== 0) return; // Bloqué si pas encore détruit
+  }
 
-  if (tile === 1) return; // mur classique : bloqué
-
-  if (tile === 3 || tile === 4 || tile === 5) {
-  hitWall(nx, ny);
-  if (labyrinth[ny][nx] !== 2) return; // bloqué tant que mur pas détruit
-}
-
-  // Déplacement du joueur autorisé
+  // Déplacement autorisé
   player.x = nx;
   player.y = ny;
   player.moving = true;
@@ -364,10 +365,10 @@ function handleKeyDown(e) { // ajouter
   if (!damageMap[key]) damageMap[key] = 0;
   damageMap[key]++;
 
-  if (damageMap[key] === 1) labyrinth[y][x] = 4;      // 1er coup → noir
-  else if (damageMap[key] === 2) labyrinth[y][x] = 5; // 2e coup → orange
-  else if (damageMap[key] >= WALL_HITS_REQUIRED) {
-    labyrinth[y][x] = 0; // mur cassé → fond vide
+  if(damageMap[key] === 1) labyrinth[y][x] = 4;      // 1er coup → noir
+  else if(damageMap[key] === 2) labyrinth[y][x] = 5; // 2e coup → orange
+  else if(damageMap[key] >= WALL_HITS_REQUIRED) {    // 3e coup → mur détruit
+    labyrinth[y][x] = 0; 
     delete damageMap[key];
   }
 }
