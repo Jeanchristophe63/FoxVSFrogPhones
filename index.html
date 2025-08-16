@@ -194,6 +194,7 @@ const imgGrenouille = new Image();
 imgRenard.src   = 'https://png.pngtree.com/png-vector/20240814/ourmid/pngtree-realistic-fox-head-illustration-png-image_13481187.png';
 imgGrenouille.src = 'https://png.pngtree.com/png-vector/20250109/ourlarge/pngtree-realistic-green-frog-with-smooth-skin-and-lifelike-texture-png-image_15076823.png';
 
+  showPopup("Objectifs : Eliminer les Grenouilles parce qu'on aime pas les grenouilles !!");
 /* =======================
    UTILS
 ======================= */
@@ -317,7 +318,7 @@ function stopGame(){ gameRunning=false; if(gameInterval) clearInterval(gameInter
 let currentLevel = 0;
 const levels = [labyrinths[0], labyrinths[1], labyrinths[2], labyrinths[3]];
 
-function showPopup(message = "🎉 Bravo, labyrinthe terminé !") {
+function showPopup(message = "🎉 Bravo, labyrinthe terminé ! ON AIME PAS LES GRENOUILLES") {
   document.getElementById("popupMessage").textContent = message;
   document.getElementById("popup").style.display = "block";
 }
@@ -341,7 +342,7 @@ function nextLevel() {
     startTimer();
 
   } else {
-    showPopup("🏆 Tournoi terminé !");
+    showPopup("🏆 Tournoi terminé ! Les Grenouilles sont éradiqués !!🖕🏼");
     document.querySelector("#popup button").style.display="none";
   }
 }
@@ -351,7 +352,7 @@ function nextLevel() {
 let lastTouchEnd = 0;
 document.addEventListener('touchend', function (event) {
   const now = Date.now();
-  if (now - lastTouchEnd <= 400) event.preventDefault();
+  if (now - lastTouchEnd <= 350) event.preventDefault();
   lastTouchEnd = now;
 }, false);
 
