@@ -304,15 +304,6 @@ function drawPlayer() {
   } 
 }
 function drawGhosts(){ ghosts.forEach(g=>{ const gx=g.xPos+scale/2; const gy=g.yPos+scale/2; ctx.fillStyle=g.color; ctx.beginPath(); ctx.arc(gx,gy,scale/2-4,0,Math.PI*2); ctx.fill(); ctx.fillStyle='#fff'; ctx.font=`bold ${Math.floor(scale/2)}px monospace`; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('R2',gx,gy); }); }
-function drawEffects(ctx) {
-  for (let i = effects.length - 1; i >= 0; i--) {
-    const e = effects[i];
-    ctx.fillStyle = "rgba(255,0,0," + (e.life / 10) + ")";
-    ctx.fillRect(e.x * scale, e.y * scale, scale, scale);
-    e.life--;
-    if (e.life <= 0) effects.splice(i, 1);
-  }
-}
   
 /* =======================
    LOGIQUE
@@ -381,7 +372,7 @@ function handleKeyDown(e) {
   return t !== undefined && t !== 1; // bloque uniquement les murs normaux
 }
   function hitWall(x, y) {
-  const key = ${x},${y};
+  const key = `${x},${y}`;
   if (!damageMap[key]) damageMap[key] = 0;
   damageMap[key]++;
 
