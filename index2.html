@@ -13,7 +13,7 @@
   input, select, button { font-size:16px; padding:6px 10px; }
   #timer { font-size:20px; margin:6px 0 10px; font-weight:bold; }
   #mobile-controls { margin:10px 0; display:flex; justify-content:center; gap:6px; flex-wrap:wrap; }
-  #mobile-controls button { width:100px; height:100px; font-size:40px; }
+  #mobile-controls button { width:120px; height:120px; font-size:80px; }
 </style>
 </head>
 <body>
@@ -52,9 +52,9 @@
    PARAMÈTRES
 ======================= */
 const PLAYER_SPEED = 60;
-const GHOST_SPEED = 4;
-const FROG_SPAWN_RATE = 90;
-const LEVEL_TIME = 90;
+const GHOST_SPEED = 2;
+const FROG_SPAWN_RATE = 99;
+const LEVEL_TIME = 120;
 const DEFAULT_NUM_GHOSTS = 2;
 const rows = 15, cols = 14;
 
@@ -140,10 +140,10 @@ const startBtn = document.getElementById('startBtn');
 const scaleInput = document.getElementById('scale');
 const ghostCountSel = document.getElementById('ghostCount');
 
-const mobileUp = document.getElementById('upBtn').addEventListener('touchstart', () => movePlayerDirection('up'));
-const mobileDown = document.getElementById('downBtn').addEventListener('touchstart', () => movePlayerDirection('down'));
-const mobileLeft = document.getElementById('leftBtn').addEventListener('touchstart', () => movePlayerDirection('left'));
-const mobileRight = document.getElementById('rightBtn').addEventListener('touchstart', () => movePlayerDirection('right'));
+const mobileUp = document.getElementById('up');
+const mobileDown = document.getElementById('down');
+const mobileLeft = document.getElementById('left');
+const mobileRight = document.getElementById('right');
 
 let scale = parseInt(scaleInput.value);
 let labyrinth = [];
@@ -155,6 +155,12 @@ let timerInterval = null;
 let timeRemaining = LEVEL_TIME;
 let gameRunning = false;
 let respawning = false;
+
+  // Images
+const imgRenard = new Image();
+const imgGrenouille = new Image();
+imgRenard.src   = 'https://png.pngtree.com/png-vector/20240814/ourmid/pngtree-realistic-fox-head-illustration-png-image_13481187.png';
+imgGrenouille.src = 'https://png.pngtree.com/png-vector/20250109/ourlarge/pngtree-realistic-green-frog-with-smooth-skin-and-lifelike-texture-png-image_15076823.png';
 
 /* =======================
    UTILS
@@ -200,37 +206,65 @@ function generateGhosts(){
 /* =======================
    DESSIN
 ======================= */
-function drawLabyrinth(){
-  for(let r=0;r<rows;r++){
-    for(let c=0;c<cols;c++){
-      const t=labyrinth[r][c];
-      if(t===1){ ctx.fillStyle='#800000'; ctx.fillRect(c*scale,r*scale,scale,scale);}
-      else if(t===3){ ctx.fillStyle='#aa6600'; ctx.fillRect(c*scale,r*scale,scale,scale);}
-      else if(t===0){ ctx.fillStyle='green'; ctx.fillRect(c*scale+scale*0.1,r*scale+scale*0.1,scale*0.8,scale*0.8);}
+function drawLabyrinth() {
+  for (let r=0; r<rows; r++) {
+    for (let c=0; c<cols; c++) {
+      const t = labyrinth[r][c];
+      if (t === 1) { // mur
+        ctx.fillStyle = '#800000';
+        ctx.fillRect(c*scale, r*scale, scale, scale);
+      } else if (t === 3) { // mur cassable (si tu l'actives un jour)
+        ctx.fillStyle = '#aa6600';
+        ctx.fillRect(c*scale, r*scale, scale, scale);
+      } else if (t === 0) { // grenouille
+        if (imgGrenouille.complete) {
+          ctx.drawImage(imgGrenouille, c*scale + scale*0.1, r*scale + scale*0.1, scale*0.8, scale*0.8);
+        }
+      }
     }
   }
 }
 
-function drawPlayer(){ ctx.fillStyle='#ff6600'; ctx.fillRect(player.xPos,player.yPos,scale,scale); }
-function drawGhosts(){ ghosts.forEach(g=>{ ctx.fillStyle=g.color; ctx.fillRect(g.xPos,g.yPos,scale,scale); }); }
+function drawPlayer() {
+  if (imgRenard.complete) {
+    ctx.drawImage(imgRenard, player.xPos, player.yPos, scale, scale);
+  } else {
+    ctx.fillStyle = '#ff6600';
+    ctx.beginPath();
+    ctx.arc(player.xPos + scale/2, player.yPos + scale/2, scale/2 - 4, 0, Math.PI*2);
+    ctx.fill();
+  }
+}                     
+function drawGhosts() {
+  ghosts.forEach(g => {
+    const gx = g.xPos + scale/2;
+    const gy = g.yPos + scale/2;
+    ctx.fillStyle = g.color;
+    ctx.beginPath();
+    ctx.arc(gx, gy, scale/2 - 4, 0, Math.PI*2);
+    ctx.fill();
+
+    ctx.fillStyle = '#fff';
+    ctx.font = `bold ${Math.floor(scale/2)}px monospace`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('R2', gx, gy);
+  });
+}
 
 /* =======================
    LOGIQUE
 ======================= */
-  function movePlayerDirection(dir) {
-  if (!gameRunning || player.moving) return;
-  let nx = player.x, ny = player.y;
-  if (dir === 'up') ny--;
-  else if (dir === 'down') ny++;
-  else if (dir === 'left') nx--;
-  else if (dir === 'right') nx++;
-  if (canMove(nx, ny)) {
-    player.x = nx;
-    player.y = ny;
-    player.moving = true;
-    player.dir = dir;
-  }
+function movePlayer(){
+  if(!player.moving) return;
+  const tx=player.x*scale, ty=player.y*scale;
+  if(player.xPos<tx) player.xPos=Math.min(player.xPos+PLAYER_SPEED,tx);
+  else if(player.xPos>tx) player.xPos=Math.max(player.xPos-PLAYER_SPEED,tx);
+  if(player.yPos<ty) player.yPos=Math.min(player.yPos+PLAYER_SPEED,ty);
+  else if(player.yPos>ty) player.yPos=Math.max(player.yPos-PLAYER_SPEED,ty);
+  if(player.xPos===tx && player.yPos===ty){ player.moving=false; if(labyrinth[player.y][player.x]===0){ labyrinth[player.y][player.x]=2; score++; updateScore(); } }
 }
+
 function moveGhosts(){
   ghosts.forEach(g=>{
     if(g.moving){
@@ -268,6 +302,39 @@ function startTimer(){
     timeRemaining--; timerEl.textContent='Temps restant : '+formatTime(timeRemaining);
     if(timeRemaining<=0){ alert('Temps écoulé !'); stopGame(); }
   },1000);
+}
+
+/* =======================
+   BOUCLE DE JEU
+   ======================= */
+function update() {
+  movePlayer();
+  moveGhosts();
+  checkCollision();
+
+  if (countRemainingFrogs() === 0) {
+    showVictory(`Labyrinthe ${currentLabIndex+1} terminé ! Tu as baisé toutes les grenouilles !! Cliquez sur OK pour continuer.`, nextLabyrinth);
+  }
+}
+
+function draw() {
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  drawLabyrinth();
+  drawPlayer();
+  drawGhosts();
+}
+
+function startLoop() {
+  if (gameInterval) clearInterval(gameInterval);
+  gameRunning = true;
+  gameInterval = setInterval(() => { update(); draw(); }, 30);
+}
+
+function gameOver(message) {
+  stopTimer();
+  gameRunning = false;
+  clearInterval(gameInterval);
+  alert(message);
 }
 
 /* =======================
