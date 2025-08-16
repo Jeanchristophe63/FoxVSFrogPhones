@@ -333,7 +333,7 @@ function movePlayer(){
       updateScore();
 
       if(score >= totalFrogs){
-        showPopup("🎉 Bravo, labyrinthe terminé ! ON AIME PAS LES GRENOUILLES \n❤️🖤");
+        showPopup("🎉 Bravo, labyrinthe terminé ! Et au faite \nON AIME PAS LES GRENOUILLES \n❤️🖤");
       }
     }
   }
@@ -457,7 +457,7 @@ function stopGame(){ gameRunning=false; if(gameInterval) clearInterval(gameInter
 let currentLevel = 0;
 const levels = [labyrinths[0], labyrinths[1], labyrinths[2], labyrinths[3]];
 
-function showPopup(message = "🎉 Bravo, labyrinthe terminé ! ON AIME PAS LES GRENOUILLES \n❤️🖤") {
+function showPopup(message = "🎉 Bravo, labyrinthe terminé ! Et au faite \nON AIME PAS LES GRENOUILLES \n❤️🖤") {
   const popupMessageEl = document.getElementById("popupMessage");
   // Remplace les sauts de ligne par des <br> pour HTML
   popupMessageEl.innerHTML = message.replace(/\n/g, "<br>");
@@ -483,8 +483,7 @@ function nextLevel() {
     startTimer();
 
   } else {
-    showPopup("🏆 Tournoi terminé ! Les Grenouilles sont éradiqués !!🖕🏼\nBisous");
-    document.querySelector("#popup button").style.display="none";
+    showPopup("🏆 Tournoi terminé 🏆! Les Grenouilles sont éradiquées !!\nBisous😘");
   }
 }
 /* =======================
