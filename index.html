@@ -58,7 +58,7 @@
   <button id="startBtn">Démarrer</button>
 </div>
 
-<div id="timer">Temps restant : 02:30</div>
+<div id="timer">Temps restant : 02:40</div>
 <div id="score">Score : 0 | Vies : 3</div>
 <div id="game-container">
   <canvas id="game"></canvas>
@@ -271,20 +271,20 @@ function drawLabyrinth() {
         ctx.fillRect(c*scale, r*scale, scale, scale);
       } 
       else if (t === 2) {     // grenouille
+        ctx.fillStyle = '#ccc'; // fond vide
+        ctx.fillRect(c*scale, r*scale, scale, scale);
         if (imgGrenouille.complete) {
           ctx.drawImage(imgGrenouille, c*scale + scale*0.1, r*scale + scale*0.1, scale*0.8, scale*0.8);
         }
       } 
       else if (t === 0) {     // vide
-  ctx.fillStyle = '#ccc';
-  ctx.fillRect(c*scale, r*scale, scale, scale);
-  if(imgGrenouille.complete){
-    ctx.drawImage(imgGrenouille, c*scale + scale*0.1, r*scale + scale*0.1, scale*0.8, scale*0.8);
-  }
-}
+        ctx.fillStyle = '#ccc';
+        ctx.fillRect(c*scale, r*scale, scale, scale);
+        // NE PLUS DESSINER LA GRENOUILLE ICI
       }
     }
   }
+}
 function drawPlayer() {
   if(imgRenard.complete){ 
     ctx.drawImage(imgRenard, player.xPos, player.yPos, scale, scale); 
