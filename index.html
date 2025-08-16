@@ -238,11 +238,6 @@ function generateGhosts(){
     ghosts.push({x,y,xPos:x*scale,yPos:y*scale,dir:'left',color:palette[i%palette.length],moving:false});
   }
 }
-  while((!canMove(x,y) || (x===player.x && y===player.y)) && tries<30){
-  x=clamp(x+(Math.random()<0.5?-1:1),1,cols-2);
-  y=clamp(y+(Math.random()<0.5?-1:1),1,rows-2);
-  tries++;
-}
 
 /* =======================
    DESSIN
