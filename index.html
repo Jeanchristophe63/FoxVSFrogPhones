@@ -366,7 +366,7 @@ function handleKeyDown(e) {
 
   function canMove(x, y) {
   const t = labyrinth[y]?.[x];
-  return t !== undefined && t !== 1 && t !== 3; // bloquer murs classiques ET cassables
+  return t !== undefined && t !== 1; // bloque uniquement les murs normaux
 }
  function hitWall(x, y) {
   const key = `${x},${y}`;
@@ -456,7 +456,7 @@ function nextLevel() {
 let lastTouchEnd = 0;
 document.addEventListener('touchend', function (event) {
   const now = Date.now();
-  if (now - lastTouchEnd <= 400) event.preventDefault();
+  if (now - lastTouchEnd <= 300) event.preventDefault();
   lastTouchEnd = now;
 }, false);
 
