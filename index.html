@@ -65,7 +65,7 @@ input, select, textarea {
   <button id="startBtn">Démarrer</button>
 </div>
 
-<div id="timer">Temps restant : 02:40</div>
+<div id="timer">Temps restant : 02:30</div>
 <div id="MaJ">!! Mis à jour le 16/08/25 !!</div>
 <div id="score">Score : 0 | Vies : 3</div>
 <div id="game-container">
@@ -92,9 +92,9 @@ input, select, textarea {
    PARAMÈTRES
 ======================= */
 const PLAYER_SPEED = 1000;
-const GHOST_SPEED = 4;
-const FROG_SPAWN_RATE = 99;
-const LEVEL_TIME = 150;
+const GHOST_SPEED = 3;
+const FROG_SPAWN_RATE = 99.9;
+const LEVEL_TIME = 120;
 const DEFAULT_NUM_GHOSTS = 2;
 const WALL_HITS_REQUIRED = 3; // nombre de coups nécessaires pour casser un mur
 const damageMap = {};
@@ -333,7 +333,7 @@ function movePlayer(){
       updateScore();
 
       if(score >= totalFrogs){
-        showPopup("🎉 Bravo, labyrinthe terminé ! Et au faite \nON AIME PAS LES GRENOUILLES \n❤️🖤");
+        showPopup("🎉 Bravo, labyrinthe terminé ! \nEt au faite \nON AIME PAS LES GRENOUILLES \n❤️🖤");
       }
     }
   }
@@ -457,7 +457,7 @@ function stopGame(){ gameRunning=false; if(gameInterval) clearInterval(gameInter
 let currentLevel = 0;
 const levels = [labyrinths[0], labyrinths[1], labyrinths[2], labyrinths[3]];
 
-function showPopup(message = "🎉 Bravo, labyrinthe terminé ! Et au faite \nON AIME PAS LES GRENOUILLES \n❤️🖤") {
+function showPopup(message = "🎉 Bravo, labyrinthe terminé ! \nEt au faite \nON AIME PAS LES GRENOUILLES \n❤️🖤") {
   const popupMessageEl = document.getElementById("popupMessage");
   // Remplace les sauts de ligne par des <br> pour HTML
   popupMessageEl.innerHTML = message.replace(/\n/g, "<br>");
@@ -467,9 +467,10 @@ function showPopup(message = "🎉 Bravo, labyrinthe terminé ! Et au faite \nON
 function nextLevel() {
   document.getElementById("popup").style.display = "none";
   currentLevel++;
+
   if(currentLevel < levels.length){
-    currentLabIndex = currentLevel;   // <-- mettre à jour l’indice utilisé pour le labyrinthe
-    labyrinth = JSON.parse(JSON.stringify(levels[currentLevel]));
+    // Charger le niveau suivant
+    currentLabIndex = currentLevel;
     generateLabyrinth();
     resizeCanvas();
     score = 0;        
@@ -483,7 +484,26 @@ function nextLevel() {
     startTimer();
 
   } else {
-    showPopup("🏆 Tournoi terminé 🏆! Les Grenouilles sont éradiquées !!\nBisous😘");
+    // Tournoi terminé → reset complet
+    showPopup("🏆 Tournoi terminé 🏆! \nLes Grenouilles sont éradiquées !!\nBisous😘");
+
+    // Réinitialiser tous les paramètres
+    score = 0;
+    lives = 0;
+    currentLevel = 0;
+    currentLabIndex = 0;
+    timeRemaining = LEVEL_TIME;
+    updateScore();
+    timerEl.textContent = 'Temps restant : ' + formatTime(timeRemaining);
+
+    // Réinitialiser le labyrinthe et les fantômes
+    labyrinth = JSON.parse(JSON.stringify(levels[0]));
+    ghosts = [];
+    generateLabyrinth();
+    resizeCanvas();
+
+    // Arrêter la boucle et timer
+    stopGame();
   }
 }
 /* =======================
