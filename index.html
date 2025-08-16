@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Pacman_Renard — 4 labyrinthes</title>
+<style>
+  body { background:#000; margin:0; font-family:monospace; color:#fff; text-align:center; user-select:none; }
+  #game-container { display:inline-block; position:relative; }
+  canvas { background:#ccc; display:block; margin:0 auto; image-rendering:pixelated; }
+  #score { margin:12px 0; }
+  #controls { margin:10px 0 6px; display:flex; gap:10px; align-items:center; justify-content:center; flex-wrap:wrap; }
+  label { opacity:.9; }
+  input, select, button { font-size:16px; padding:6px 10px; }
+  #timer { font-size:20px; margin:6px 0 10px; font-weight:bold; }
+  #mobile-controls { margin:10px 0; display:flex; justify-content:center; gap:6px; flex-wrap:wrap; }
+  #mobile-controls button { width:120px; height:120px; font-size:80px; }
+
+  /* POPUP */
+  #popup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0,0,0,0.9);
+    color: #fff;
+    padding: 20px 30px;
+    border-radius: 12px;
+    font-size: 20px;
+    display: none;
+    z-index: 10000;
+    text-align: center;
+  }
+  #popup button {
+    margin-top: 12px;
+    padding: 8px 14px;
+    background: #ff9800;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    color: white;
+    font-size: 16px;
+  }
+</style>
+</head>
+<body>
+
+<div id="controls">
+  <label for="scale">Zoom :</label>
+  <input type="number" id="scale" value="25" min="16" max="64" step="4" />
+  <label for="ghostCount">Fantômes (2–5) :</label>
+  <select id="ghostCount">
+    <option value="2">2</option>
+    <option value="3" selected>3</option>
+    <option value="4">4</option>
+    <option value="5">5</option>
+  </select>
+  <button id="startBtn">Démarrer</button>
+</div>
+
+<div id="timer">Temps restant : 02:00</div>
+<div id="score">Score : 0 | Vies : 3</div>
+<div id="game-container">
+  <canvas id="game"></canvas>
+</div>
+
+<!-- Flèches mobile -->
+<div id="mobile-controls">
+  <button id="up">▲</button>
+</div>
+<div id="mobile-controls">
+  <button id="left">◀</button>
+  <button id="down">▼</button>
+  <button id="right">▶</button>
+</div>
+
+<div id="popup">
+  <p id="popupMessage">🎉 Bravo, labyrinthe terminé !</p>
+  <button onclick="nextLevel()">Continuer</button>
+</div>
+
+<script>
+/* =======================
+   PARAMÈTRES
+======================= */
+const PLAYER_SPEED = 60;
+const GHOST_SPEED = 2;
+const FROG_SPAWN_RATE = 99;
+const LEVEL_TIME = 150;
+const DEFAULT_NUM_GHOSTS = 2;
+const rows = 15, cols = 14;
+
+const labyrinths = [
+  [ /* Labyrinthe 1 */ [1,1,1,1,1,1,1,1,1,1,1,1,1,1],[1,0,0,0,0,0,0,0,0,0,0,0,0,1],[1,0,1,1,1,1,1,1,1,1,1,0,0,1],[1,0,1,0,0,0,0,0,0,0,1,0,0,1],[1,0,1,0,1,1,1,1,1,0,1,0,1,1],[1,0,1,0,1,0,0,0,1,0,1,0,0,1],[1,0,1,0,0,0,1,1,1,0,1,0,0,1],[1,0,1,0,1,0,1,0,0,0,1,1,0,1],[1,0,0,0,1,0,1,0,1,1,1,0,0,1],[1,0,1,0,1,0,0,0,0,0,1,0,1,1],[1,0,1,0,1,1,1,0,1,0,1,0,0,1],[1,0,0,0,0,0,0,0,1,0,1,0,1,1],[1,0,1,1,1,1,1,1,1,0,1,0,0,1],[1,0,0,0,0,0,1,0,0,0,0,0,0,1],[1,1,1,1,1,1,1,1,1,1,1,1,1,1]],
+  [ /* Labyrinthe 2 */ /*...*/ ], 
+  [ /* Labyrinthe 3 */ /*...*/ ],
+  [ /* Labyrinthe 4 */ /*...*/ ]
+];
+
+/* =======================
+   DOM & ÉTAT
+======================= */
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+const scoreEl = document.getElementById('score');
+const timerEl = document.getElementById('timer');
+const startBtn = document.getElementById('startBtn');
+const scaleInput = document.getElementById('scale');
+const ghostCountSel = document.getElementById('ghostCount');
+
+const mobileUp = document.getElementById('up');
+const mobileDown = document.getElementById('down');
+const mobileLeft = document.getElementById('left');
+const mobileRight = document.getElementById('right');
+
+let scale = parseInt(scaleInput.value);
+let labyrinth = [];
+let score = 0, lives = 3, currentLabIndex = 0;
+let player = {x:1, y:1, xPos:1*scale, yPos:1*scale, dir:null, moving:false};
+let ghosts = [];
+let gameInterval = null;
+let timerInterval = null;
+let timeRemaining = LEVEL_TIME;
+let gameRunning = false;
+let respawning = false;
+let totalFrogs = 0;
+
+const imgRenard = new Image();
+const imgGrenouille = new Image();
+imgRenard.src   = 'https://png.pngtree.com/png-vector/20240814/ourmid/pngtree-realistic-fox-head-illustration-png-image_13481187.png';
+imgGrenouille.src = 'https://png.pngtree.com/png-vector/20250109/ourlarge/pngtree-realistic-green-frog-with-smooth-skin-and-lifelike-texture-png-image_15076823.png';
+
+/* =======================
+   UTILS
+======================= */
+function resizeCanvas() { canvas.width = cols*scale; canvas.height = rows*scale; }
+function canMove(x,y){ return labyrinth[y] && labyrinth[y][x]!==undefined && labyrinth[y][x]!==1 && labyrinth[y][x]!==3; }
+function updateScore(){ scoreEl.textContent=`Score : ${score} | Vies : ${lives}`; }
+function formatTime(s){ return `${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`; }
+function clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
+
+/* =======================
+   LABYRINTHE
+======================= */
+function generateLabyrinth(){
+  labyrinth = JSON.parse(JSON.stringify(labyrinths[currentLabIndex]));
+  labyrinth[1][1]=labyrinth[1][2]=labyrinth[2][1]=labyrinth[2][2]=labyrinth[2][3]=labyrinth[3][1]=0;
+  totalFrogs = 0;
+  for(let r=1;r<rows-1;r++){
+    for(let c=1;c<cols-1;c++){
+      if(labyrinth[r][c]===0 && Math.random()*100>FROG_SPAWN_RATE){
+        labyrinth[r][c]=2;
+        totalFrogs++;
+      }
+    }
+  }
+  player.x=1; player.y=1; player.xPos=player.x*scale; player.yPos=player.y*scale; player.dir=null; player.moving=false;
+  generateGhosts();
+}
+
+function generateGhosts(){
+  const wanted = clamp(parseInt(ghostCountSel.value||DEFAULT_NUM_GHOSTS),2,5);
+  ghosts=[];
+  const palette=['red','black','blue','orange','magenta','purple','yellow'];
+  const spawns=[{x:cols-2,y:1},{x:cols-2,y:rows-2},{x:1,y:rows-2},{x:Math.floor(cols/2),y:Math.floor(rows/2)},{x:cols-2,y:Math.floor(rows/2)}];
+  for(let i=0;i<wanted;i++){
+    let {x,y}=spawns[i%spawns.length];
+    let tries=0; while(!canMove(x,y)&&tries<30){ x=clamp(x+(Math.random()<0.5?-1:1),1,cols-2); y=clamp(y+(Math.random()<0.5?-1:1),1,rows-2); tries++; }
+    ghosts.push({x,y,xPos:x*scale,yPos:y*scale,dir:'left',color:palette[i%palette.length],moving:false});
+  }
+}
+
+/* =======================
+   DESSIN
+======================= */
+function drawLabyrinth(){ for(let r=0;r<rows;r++){ for(let c=0;c<cols;c++){ const t=labyrinth[r][c]; if(t===1){ ctx.fillStyle='#800000'; ctx.fillRect(c*scale,r*scale,scale,scale); } else if(t===3){ ctx.fillStyle='#aa6600'; ctx.fillRect(c*scale,r*scale,scale,scale); } else if(t===0 || t===2){ if(imgGrenouille.complete && t===2){ ctx.drawImage(imgGrenouille,c*scale+scale*0.1,r*scale+scale*0.1,scale*0.8,scale*0.8); } } } } }
+function drawPlayer(){ if(imgRenard.complete){ ctx.drawImage(imgRenard,player.xPos,player.yPos,scale,scale); } else { ctx.fillStyle='#ff6600'; ctx.beginPath(); ctx.arc(player.xPos+scale/2,player.yPos+scale/2,scale/2-4,0,Math.PI*2); ctx.fill(); } }
+function drawGhosts(){ ghosts.forEach(g=>{ const gx=g.xPos+scale/2; const gy=g.yPos+scale/2; ctx.fillStyle=g.color; ctx.beginPath(); ctx.arc(gx,gy,scale/2-4,0,Math.PI*2); ctx.fill(); ctx.fillStyle='#fff'; ctx.font=`bold ${Math.floor(scale/2)}px monospace`; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('R2',gx,gy); }); }
+
+/* =======================
+   LOGIQUE
+======================= */
+function movePlayer(){ if(!player.moving) return; const tx=player.x*scale, ty=player.y*scale; if(player.xPos<tx) player.xPos=Math.min(player.xPos+PLAYER_SPEED,tx); else if(player.xPos>tx) player.xPos=Math.max(player.xPos-PLAYER_SPEED,tx); if(player.yPos<ty) player.yPos=Math.min(player.yPos+PLAYER_SPEED,ty); else if(player.yPos>ty) player.yPos=Math.max(player.yPos-GHOST_SPEED,tx); if(player.xPos===tx && player.yPos===ty){ player.moving=false; if(labyrinth[player.y][player.x]===0){ labyrinth[player.y][player.x]=2; score++; updateScore(); if(score>=totalFrogs){ showPopup("🎉 Bravo, labyrinthe terminé !"); } } } }
+function moveGhosts(){ ghosts.forEach(g=>{ if(g.moving){ const tx=g.x*scale, ty=g.y*scale; g.xPos=g.xPos<tx?Math.min(g.xPos+GHOST_SPEED,tx):Math.max(g.xPos-GHOST_SPEED,tx); g.yPos=g.yPos<ty?Math.min(g.yPos+GHOST_SPEED,ty):Math.max(g.yPos-GHOST_SPEED,ty); if(g.xPos===tx && g.yPos===ty) g.moving=false; } else { const dirs=['left','right','up','down']; let options=dirs.filter(d=>{ let nx=g.x, ny=g.y; if(d==='left') nx--; else if(d==='right') nx++; else if(d==='up') ny--; else if(d==='down') ny++; return canMove(nx,ny); }); if(options.length>1){ const opp={left:'right',right:'left',up:'down',down:'up'}; options=options.filter(d=>d!==opp[g.dir]); if(options.length===0) options=dirs;} if(options.length){ g.dir=options[Math.floor(Math.random()*options.length)]; if(g.dir==='left') g.x--; else if(g.dir==='right') g.x++; else if(g.dir==='up') g.y--; else if(g.dir==='down') g.y++; g.moving=true; } } }); }
+function checkCollision(){ if(respawning) return; for(const g of ghosts){ if(Math.abs(g.x-player.x)+Math.abs(g.y-player.y)===0){ lives--; updateScore(); if(lives<=0){ alert('Game Over !'); stopGame(); return;} respawning=true; setTimeout(()=>{ player.x=1; player.y=1; player.xPos=player.x*scale; player.yPos=player.y*scale; respawning=false; },500); } } }
+
+function gameLoop(){ ctx.clearRect(0,0,canvas.width,canvas.height); drawLabyrinth(); drawPlayer(); drawGhosts(); movePlayer(); moveGhosts(); checkCollision(); }
+
+/* =======================
+   TIMER
+======================= */
+function startTimer(){ timeRemaining=LEVEL_TIME; timerEl.textContent='Temps restant : '+formatTime(timeRemaining); timerInterval=setInterval(()=>{ if(!gameRunning) return; timeRemaining--; timerEl.textContent='Temps restant : '+formatTime(timeRemaining); if(timeRemaining<=0){ alert('Temps écoulé !'); stopGame(); } },1000); }
+
+/* =======================
+   CONTRÔLES
+======================= */
+function keyDown(e){ if(player.moving||respawning) return; let nx=player.x, ny=player.y; if(e.key==='ArrowLeft') nx--; else if(e.key==='ArrowRight') nx++; else if(e.key==='ArrowUp') ny--; else if(e.key==='ArrowDown') ny++; if(canMove(nx,ny)){ player.x=nx; player.y=ny; player.moving=true; } }
+function mobileControl(dir){ if(player.moving||respawning) return; let nx=player.x, ny=player.y; if(dir==='left') nx--; else if(dir==='right') nx++; else if(dir==='up') ny--; else if(dir==='down') ny++; if(canMove(nx,ny)){ player.x=nx; player.y=ny; player.moving=true; } }
+
+/* =======================
+   DÉMARRAGE / STOP
+======================= */
+function startGame(){ gameRunning=true; generateLabyrinth(); updateScore(); resizeCanvas(); if(gameInterval) clearInterval(gameInterval); gameInterval=setInterval(gameLoop,40); if(timerInterval) clearInterval(timerInterval); startTimer(); }
+function stopGame(){ gameRunning=false; if(gameInterval) clearInterval(gameInterval); if(timerInterval) clearInterval(timerInterval); }
+
+/* =======================
+   POPUP
+======================= */
+let currentLevel = 0;
+const levels = [labyrinths[0], labyrinths[1], labyrinths[2], labyrinths[3]];
+
+function showPopup(message = "🎉 Bravo, labyrinthe terminé !") {
+  document.getElementById("popupMessage").textContent = message;
+  document.getElementById("popup").style.display = "block";
+}
+
+function nextLevel() {
+  document.getElementById("popup").style.display = "none";
+  currentLevel++;
+  if(currentLevel < levels.length){
+    labyrinth = JSON.parse(JSON.stringify(levels[currentLevel]));
+    generateLabyrinth();
+    resizeCanvas();
+    updateScore();
+  } else {
+    showPopup("🏆 Tournoi terminé !");
+    document.querySelector("#popup button").style.display="none";
+  }
+}
+
+/* =======================
+   TOUCH DOUBLE TAP
+======================= */
+let lastTouchEnd = 0;
+document.addEventListener('touchend', function (event) {
+  const now = Date.now();
+  if (now - lastTouchEnd <= 120) event.preventDefault();
+  lastTouchEnd = now;
+}, false);
+
+/* =======================
+   ÉVÉNEMENTS
+======================= */
+startBtn.addEventListener('click',startGame);
+scaleInput.addEventListener('change',()=>{ scale=parseInt(scaleInput.value); resizeCanvas(); });
+document.addEventListener('keydown',keyDown);
+
+mobileUp.addEventListener('click',()=>mobileControl('up'));
+mobileDown.addEventListener('click',()=>mobileControl('down'));
+mobileLeft.addEventListener('click',()=>mobileControl('left'));
+mobileRight.addEventListener('click',()=>mobileControl('right'));
+
+resizeCanvas();
+</script>
+</body>
+</html>
