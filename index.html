@@ -89,6 +89,7 @@ const FROG_SPAWN_RATE = 99;
 const LEVEL_TIME = 150;
 const DEFAULT_NUM_GHOSTS = 2;
 const WALL_HITS_REQUIRED = 3; // nombre de coups nécessaires pour casser un mur
+const damageMap = {};
 const rows = 15, cols = 14;
 
 const labyrinths = [
@@ -265,7 +266,7 @@ function drawLabyrinth() {
         ctx.fillStyle = 'orange';
         ctx.fillRect(c*scale, r*scale, scale, scale);
       } 
-      else if (t === 0) {     // grenouille
+      else if (t === 2) {     // grenouille
         if (imgGrenouille.complete) {
           ctx.drawImage(imgGrenouille, c*scale + scale*0.1, r*scale + scale*0.1, scale*0.8, scale*0.8);
         }
@@ -340,7 +341,12 @@ function handleKeyDown(e) { // ajouter
   player.moving = true;
   player.dir = e.key.replace('Arrow','').toLowerCase();
 }
-  function hitWall(x, y) {
+
+  function canMove(x,y){ 
+  const t = labyrinth[y]?.[x];
+  return t !== undefined && t !== 1; // 1 = mur classique
+}
+ function hitWall(x, y) {
   const key = `${x},${y}`;
   if (!damageMap[key]) damageMap[key] = 0;
   damageMap[key]++;
@@ -348,20 +354,8 @@ function handleKeyDown(e) { // ajouter
   if (damageMap[key] === 1) labyrinth[y][x] = 4;      // 1er coup → noir
   else if (damageMap[key] === 2) labyrinth[y][x] = 5; // 2e coup → orange
   else if (damageMap[key] >= WALL_HITS_REQUIRED) {
-    labyrinth[y][x] = 2; // mur cassé → fond vide
+    labyrinth[y][x] = 0; // mur cassé → fond vide
     delete damageMap[key];
-  }
-}
-
-  // changer le tile selon les coups
-  if (damageMap[key] === 1) labyrinth[y][x] = 4;       // 1er coup → noir
-  else if (damageMap[key] === 2) labyrinth[y][x] = 5;  // 2e coup → orange
-  else if (damageMap[key] >= WALL_HITS_REQUIRED) {
-    labyrinth[y][x] = 2; // mur cassé → fond
-    delete damageMap[key];
-
-    // effet visuel (optionnel)
-    effects.push({x, y, duration: 10, color: '#fff'});
   }
 }
   
@@ -378,7 +372,6 @@ function startTimer(){ timeRemaining=LEVEL_TIME; timerEl.textContent='Temps rest
 /* =======================
    CONTRÔLES
 ======================= */
-function keyDown(e){ if(player.moving||respawning) return; let nx=player.x, ny=player.y; if(e.key==='ArrowLeft') nx--; else if(e.key==='ArrowRight') nx++; else if(e.key==='ArrowUp') ny--; else if(e.key==='ArrowDown') ny++; if(canMove(nx,ny)){ player.x=nx; player.y=ny; player.moving=true; } }
 function mobileControl(dir){ if(player.moving||respawning) return; let nx=player.x, ny=player.y; if(dir==='left') nx--; else if(dir==='right') nx++; else if(dir==='up') ny--; else if(dir==='down') ny++; if(canMove(nx,ny)){ player.x=nx; player.y=ny; player.moving=true; } }
 
 /* =======================
@@ -450,7 +443,7 @@ document.addEventListener('touchend', function (event) {
 ======================= */
 startBtn.addEventListener('click',startGame);
 scaleInput.addEventListener('change',()=>{ scale=parseInt(scaleInput.value); resizeCanvas(); });
-document.addEventListener('keydown',keyDown);
+document.addEventListener('keydown', handleKeyDown);
 
 mobileUp.addEventListener('click',()=>mobileControl('up'));
 mobileDown.addEventListener('click',()=>mobileControl('down'));
