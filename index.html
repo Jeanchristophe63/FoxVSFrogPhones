@@ -58,7 +58,7 @@
   <button id="startBtn">Démarrer</button>
 </div>
 
-<div id="timer">Temps restant : 02:00</div>
+<div id="timer">Temps restant : 02:30</div>
 <div id="score">Score : 0 | Vies : 3</div>
 <div id="game-container">
   <canvas id="game"></canvas>
@@ -326,23 +326,32 @@ function nextLevel() {
   document.getElementById("popup").style.display = "none";
   currentLevel++;
   if(currentLevel < levels.length){
+    currentLabIndex = currentLevel;   // <-- mettre à jour l’indice utilisé pour le labyrinthe
     labyrinth = JSON.parse(JSON.stringify(levels[currentLevel]));
     generateLabyrinth();
     resizeCanvas();
+    score = 0;        
+    lives = 3;        
     updateScore();
+
+    // Réinitialiser le timer
+    timeRemaining = LEVEL_TIME;
+    timerEl.textContent = 'Temps restant : ' + formatTime(timeRemaining);
+    if(timerInterval) clearInterval(timerInterval);
+    startTimer();
+
   } else {
     showPopup("🏆 Tournoi terminé !");
     document.querySelector("#popup button").style.display="none";
   }
 }
-
 /* =======================
    TOUCH DOUBLE TAP
 ======================= */
 let lastTouchEnd = 0;
 document.addEventListener('touchend', function (event) {
   const now = Date.now();
-  if (now - lastTouchEnd <= 600) event.preventDefault();
+  if (now - lastTouchEnd <= 400) event.preventDefault();
   lastTouchEnd = now;
 }, false);
 
