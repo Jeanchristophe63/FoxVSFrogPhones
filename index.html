@@ -65,7 +65,7 @@ input, select, textarea {
   <button id="startBtn">Démarrer</button>
 </div>
 
-<div id="timer">Temps restant : 02:00</div>
+<div id="timer">Temps restant : 02:01</div>
 <div id="MaJ">!! Mis à jour le 16/08/25 !!</div>
 <div id="score">Score : 0 | Vies : 3</div>
 <div id="game-container">
@@ -470,7 +470,8 @@ function nextLevel() {
   document.getElementById("popup").style.display = "none";
   currentLevel++;
   startTime = Date.now(); // mémorise le début du labyrinthe
-  let elapsed = Math.floor((Date.now() - startTime) / 1000); // en secondes
+  // Calcul du temps écoulé
+let elapsed = Math.floor((Date.now() - startTime) / 1000); // en secondes
 labyrinthTimes.push(elapsed);
   if(currentLevel < levels.length){
     // Charger le niveau suivant
@@ -490,7 +491,7 @@ labyrinthTimes.push(elapsed);
   message += "\nBisous😘";
   showPopup(message);
 
-  // reset
+  // reset pour nouvelle partie
   score = 0; lives = 0; currentLevel = 0; currentLabIndex = 0;
   labyrinthTimes = [];
   stopGame();
