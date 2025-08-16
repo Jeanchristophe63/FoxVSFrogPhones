@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>Pacman_Renard — 4 labyrinthes</title>
+<title>Pacman_Renard — 4 labyrinthes_Phone</title>
 <style>
   body { background:#000; margin:0; font-family:monospace; color:#fff; text-align:center; user-select:none; }
   #game-container { display:inline-block; position:relative; }
@@ -492,7 +492,7 @@ function nextLevel() {
 let lastTouchEnd = 0;
 document.addEventListener('touchend', function (event) {
   const now = Date.now();
-  if (now - lastTouchEnd <= 50) event.preventDefault();
+  if (now - lastTouchEnd <= 20) event.preventDefault();
   lastTouchEnd = now;
 }, false);
 
