@@ -211,21 +211,25 @@ function clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
 ======================= */
 function generateLabyrinth(){
   labyrinth = JSON.parse(JSON.stringify(labyrinths[currentLabIndex]));
+
   // Placer le départ
   player.x = 1; player.y = 1;
-  player.xPos = player.x*scale; player.yPos = player.y*scale;
-  player.moving = false; player.dir = null;
+  player.xPos = player.x*scale; 
+  player.yPos = player.y*scale;
+  player.moving = false; 
+  player.dir = null;
 
-  // Placer toutes les grenouilles sur les cases vides
+  // Placer les grenouilles sur un pourcentage des cases vides
   totalFrogs = 0;
   for(let r=1;r<rows-1;r++){
     for(let c=1;c<cols-1;c++){
-      if(labyrinth[r][c]===0){
+      if(labyrinth[r][c]===0 && Math.random()*100 < FROG_SPAWN_RATE){
         labyrinth[r][c] = 2; // 2 = grenouille
         totalFrogs++;
       }
     }
   }
+
   generateGhosts();
   updateScore();
 }
@@ -281,7 +285,16 @@ function drawLabyrinth() {
       }
     }
   }
-function drawPlayer(){ if(imgRenard.complete){ ctx.drawImage(imgRenard,player.xPos,player.yPos,scale,scale); } else { ctx.fillStyle='#ff6600'; ctx.beginPath(); ctx.arc(player.xPos+scale/2,player.yPos+scale/2,scale/2-4,0,Math.PI*2); ctx.fill(); } }
+function drawPlayer() {
+  if(imgRenard.complete){ 
+    ctx.drawImage(imgRenard, player.xPos, player.yPos, scale, scale); 
+  } else { 
+    ctx.fillStyle='#ff6600'; 
+    ctx.beginPath(); 
+    ctx.arc(player.xPos+scale/2, player.yPos+scale/2, scale/2-4, 0, Math.PI*2); 
+    ctx.fill(); 
+  } 
+}
 function drawGhosts(){ ghosts.forEach(g=>{ const gx=g.xPos+scale/2; const gy=g.yPos+scale/2; ctx.fillStyle=g.color; ctx.beginPath(); ctx.arc(gx,gy,scale/2-4,0,Math.PI*2); ctx.fill(); ctx.fillStyle='#fff'; ctx.font=`bold ${Math.floor(scale/2)}px monospace`; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('R2',gx,gy); }); }
 
 /* =======================
