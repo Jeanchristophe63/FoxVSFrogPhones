@@ -65,7 +65,7 @@ input, select, textarea {
   <button id="startBtn">Démarrer</button>
 </div>
 
-<div id="timer">Temps restant : 02:30</div>
+<div id="timer">Temps restant : 02:40</div>
 <div id="MaJ">!! Mis à jour le 16/08/25 !!</div>
 <div id="score">Score : 0 | Vies : 3</div>
 <div id="game-container">
@@ -340,6 +340,7 @@ function movePlayer(){
 }
 function handleKeyDown(e) {
   if (!gameRunning || respawning) return;
+
   let dx = 0, dy = 0;
   if (e.key === "ArrowUp") dy = -1;
   else if (e.key === "ArrowDown") dy = 1;
@@ -350,15 +351,16 @@ function handleKeyDown(e) {
   const nx = player.x + dx;
   const ny = player.y + dy;
   const tile = labyrinth[ny]?.[nx];
-  if (tile === undefined) return;
 
-  // Si c’est un mur cassable (y compris noir), on tape dedans et on bloque
+  if (tile === undefined) return; // hors labyrinthe
+
+  // Gestion murs cassables
   if (tile === 3 || tile === 4 || tile === 5) {
-    hitWall(nx, ny);
-    return; // bloque le mouvement
+    hitWall(nx, ny);             // tape dans le mur
+    if (labyrinth[ny][nx] !== 0) return; // bloque tant que pas détruit
   }
 
-  // Déplacement normal
+  // Déplacement si case libre ou grenouille
   if (canMove(nx, ny)) {
     player.x = nx;
     player.y = ny;
@@ -371,12 +373,15 @@ function hitWall(x, y) {
   if (!damageMap[key]) damageMap[key] = 0;
   damageMap[key]++;
 
+  // Change la couleur selon le nombre de coups
   if(damageMap[key] === 1) labyrinth[y][x] = 4;      // 1er coup → rouge
   else if(damageMap[key] === 2) labyrinth[y][x] = 5; // 2e coup → orange
-  else if(damageMap[key] >= WALL_HITS_REQUIRED) {    // 3e coup → mur détruit
+  else if(damageMap[key] >= WALL_HITS_REQUIRED) {    // 3e coup → détruit
     labyrinth[y][x] = 0;
     delete damageMap[key];
   }
+
+  // Ne pas vibrer ici, vibration seulement sur contact fantôme
 }
   
   function canMove(x, y) {
@@ -393,14 +398,14 @@ function checkCollision() {
       lives--;
       updateScore();
 
-      // Vibration uniquement sur contact fantôme
-      if(navigator.vibrate) navigator.vibrate([200]);
-
       if(lives <= 0){
         alert('Game Over !');
         stopGame();
         return;
       }
+      if(player.x === g.x && player.y === g.y){
+    if(navigator.vibrate) navigator.vibrate([200]); // vibration
+}
 
       respawning = true;
       setTimeout(()=>{
