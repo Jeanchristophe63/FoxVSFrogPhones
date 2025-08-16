@@ -209,7 +209,6 @@ imgGrenouille.src = 'https://png.pngtree.com/png-vector/20250109/ourlarge/pngtre
    UTILS
 ======================= */
 function resizeCanvas() { canvas.width = cols*scale; canvas.height = rows*scale; }
-function canMove(x,y){ return labyrinth[y] && labyrinth[y][x]!==undefined && labyrinth[y][x]!==1 && labyrinth[y][x]!==3; }
 function updateScore(){ scoreEl.textContent=`Score : ${score} | Vies : ${lives}`; }
 function formatTime(s){ return `${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`; }
 function clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
@@ -339,31 +338,34 @@ function movePlayer(){
   }
 }
 function handleKeyDown(e) {
-  if (!gameRunning || player.moving) return;
-
-  let nx = player.x, ny = player.y;
-  if (e.key === 'ArrowLeft') nx--;
-  else if (e.key === 'ArrowRight') nx++;
-  else if (e.key === 'ArrowUp') ny--;
-  else if (e.key === 'ArrowDown') ny++;
+  if (gameOver) return;
+  let dx = 0, dy = 0;
+  if (e.key === "ArrowUp") dy = -1;
+  else if (e.key === "ArrowDown") dy = 1;
+  else if (e.key === "ArrowLeft") dx = -1;
+  else if (e.key === "ArrowRight") dx = 1;
   else return;
 
+  const nx = player.x + dx, ny = player.y + dy;
   const tile = labyrinth[ny]?.[nx];
-  if(tile === undefined || tile === 1) return; // mur normal : bloqué
 
-  // Mur cassable
-  if(tile === 3 || tile === 4 || tile === 5){
+  if (tile === undefined) return; // dehors
+
+  // Si c'est un mur cassable
+  if (tile === 3 || tile === 4 || tile === 5) {
     hitWall(nx, ny); 
-    if(labyrinth[ny][nx] !== 0) return; // Bloqué si pas encore détruit
+    if (labyrinth[ny][nx] !== 0) return; // reste bloqué tant que pas détruit
   }
 
-  // Déplacement autorisé
-  player.x = nx;
-  player.y = ny;
-  player.moving = true;
-  player.dir = e.key.replace('Arrow','').toLowerCase();
+  // Vérifie si passage possible
+  if (canMove(nx, ny)) {
+    player.x = nx;
+    player.y = ny;
+    eatDot();
+    checkVictory();
+  }
 }
-
+  
   function canMove(x, y) {
   const t = labyrinth[y]?.[x];
   return t !== undefined && t !== 1; // bloque uniquement les murs normaux
