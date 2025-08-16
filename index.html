@@ -243,7 +243,39 @@ function generateGhosts(){
 /* =======================
    DESSIN
 ======================= */
-function drawLabyrinth(){ for(let r=0;r<rows;r++){ for(let c=0;c<cols;c++){ const t=labyrinth[r][c]; if(t===1){ ctx.fillStyle='#800000'; ctx.fillRect(c*scale,r*scale,scale,scale); } else if(t===3){ ctx.fillStyle='#aa6600'; ctx.fillRect(c*scale,r*scale,scale,scale); } else if(t===0 || t===2){ if(imgGrenouille.complete && t===2){ ctx.drawImage(imgGrenouille,c*scale+scale*0.1,r*scale+scale*0.1,scale*0.8,scale*0.8); } } } } }
+function drawLabyrinth() {
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const t = labyrinth[r][c];
+
+      if (t === 1) {          // mur normal
+        ctx.fillStyle = '#800000';
+        ctx.fillRect(c*scale, r*scale, scale, scale);
+      } 
+      else if (t === 3) {     // mur cassable initial
+        ctx.fillStyle = '#aa6600';
+        ctx.fillRect(c*scale, r*scale, scale, scale);
+      } 
+      else if (t === 4) {     // 1er coup
+        ctx.fillStyle = '#000';
+        ctx.fillRect(c*scale, r*scale, scale, scale);
+      } 
+      else if (t === 5) {     // 2e coup
+        ctx.fillStyle = 'orange';
+        ctx.fillRect(c*scale, r*scale, scale, scale);
+      } 
+      else if (t === 0) {     // grenouille
+        if (imgGrenouille.complete) {
+          ctx.drawImage(imgGrenouille, c*scale + scale*0.1, r*scale + scale*0.1, scale*0.8, scale*0.8);
+        }
+      } 
+      else if (t === 2) {     // vide / fond
+        ctx.fillStyle = '#ccc';
+        ctx.fillRect(c*scale, r*scale, scale, scale);
+      }
+    }
+  }
+}
 function drawPlayer(){ if(imgRenard.complete){ ctx.drawImage(imgRenard,player.xPos,player.yPos,scale,scale); } else { ctx.fillStyle='#ff6600'; ctx.beginPath(); ctx.arc(player.xPos+scale/2,player.yPos+scale/2,scale/2-4,0,Math.PI*2); ctx.fill(); } }
 function drawGhosts(){ ghosts.forEach(g=>{ const gx=g.xPos+scale/2; const gy=g.yPos+scale/2; ctx.fillStyle=g.color; ctx.beginPath(); ctx.arc(gx,gy,scale/2-4,0,Math.PI*2); ctx.fill(); ctx.fillStyle='#fff'; ctx.font=`bold ${Math.floor(scale/2)}px monospace`; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('R2',gx,gy); }); }
 
@@ -278,6 +310,51 @@ function movePlayer(){
     }
   }
 }
+function handleKeyDown(e) { // ajouter
+  if (!gameRunning || player.moving) return;
+
+  let nx = player.x, ny = player.y;
+  if (e.key === 'ArrowLeft') nx--;
+  else if (e.key === 'ArrowRight') nx++;
+  else if (e.key === 'ArrowUp') ny--;
+  else if (e.key === 'ArrowDown') ny++;
+  else return;
+
+  if (!labyrinth[ny] || labyrinth[ny][nx] == null) return;
+
+  const tile = labyrinth[ny][nx];
+
+  if (tile === 1) return; // mur classique : bloqué
+
+  if (tile === 3 || tile === 4 || tile === 5) { // mur cassable
+    hitWall(nx, ny); 
+    // Bloque le joueur jusqu'à ce que le mur soit détruit
+    if (labyrinth[ny][nx] !== 2) return;
+  }
+
+  // Déplacement du joueur autorisé
+  player.x = nx;
+  player.y = ny;
+  player.moving = true;
+  player.dir = e.key.replace('Arrow','').toLowerCase();
+}
+  function hitWall(x, y) {   // ajouter
+  const key = `${x},${y}`;
+  if (!damageMap[key]) damageMap[key] = 0;
+  damageMap[key]++;
+
+  // changer le tile selon les coups
+  if (damageMap[key] === 1) labyrinth[y][x] = 4;       // 1er coup → noir
+  else if (damageMap[key] === 2) labyrinth[y][x] = 5;  // 2e coup → orange
+  else if (damageMap[key] >= WALL_HITS_REQUIRED) {
+    labyrinth[y][x] = 2; // mur cassé → fond
+    delete damageMap[key];
+
+    // effet visuel (optionnel)
+    effects.push({x, y, duration: 10, color: '#fff'});
+  }
+}
+  
 function moveGhosts(){ ghosts.forEach(g=>{ if(g.moving){ const tx=g.x*scale, ty=g.y*scale; g.xPos=g.xPos<tx?Math.min(g.xPos+GHOST_SPEED,tx):Math.max(g.xPos-GHOST_SPEED,tx); g.yPos=g.yPos<ty?Math.min(g.yPos+GHOST_SPEED,ty):Math.max(g.yPos-GHOST_SPEED,ty); if(g.xPos===tx && g.yPos===ty) g.moving=false; } else { const dirs=['left','right','up','down']; let options=dirs.filter(d=>{ let nx=g.x, ny=g.y; if(d==='left') nx--; else if(d==='right') nx++; else if(d==='up') ny--; else if(d==='down') ny++; return canMove(nx,ny); }); if(options.length>1){ const opp={left:'right',right:'left',up:'down',down:'up'}; options=options.filter(d=>d!==opp[g.dir]); if(options.length===0) options=dirs;} if(options.length){ g.dir=options[Math.floor(Math.random()*options.length)]; if(g.dir==='left') g.x--; else if(g.dir==='right') g.x++; else if(g.dir==='up') g.y--; else if(g.dir==='down') g.y++; g.moving=true; } } }); }
 function checkCollision(){ if(respawning) return; for(const g of ghosts){ if(Math.abs(g.x-player.x)+Math.abs(g.y-player.y)===0){ lives--; updateScore(); if(lives<=0){ alert('Game Over !'); stopGame(); return;} respawning=true; setTimeout(()=>{ player.x=1; player.y=1; player.xPos=player.x*scale; player.yPos=player.y*scale; respawning=false; },500); } } }
 
