@@ -281,9 +281,30 @@ function moveGhosts(){
   });
 }
 
-function checkCollision(){
-  if(respawning) return;
-  for(const g of ghosts){ if(Math.abs(g.x-player.x)+Math.abs(g.y-player.y)===0){ lives--; updateScore(); if(lives<=0){ alert('Game Over !'); stopGame(); return;} respawning=true; setTimeout(()=>{ player.x=1; player.y=1; player.xPos=player.x*scale; player.yPos=player.y*scale; respawning=false; },500); } }
+function checkCollision() {
+  if (respawning) return;  // ignore les collisions pendant le respawn
+
+  for (const g of ghosts) {
+    if (Math.abs(g.xPos - player.xPos) < scale*0.5 &&
+        Math.abs(g.yPos - player.yPos) < scale*0.5) {
+      lives--;
+      updateScore();
+      if (lives <= 0) {
+        gameOver("Game Over ! Vous avez perdu toutes vos vies.");
+      } else {
+        respawning = true;   // active invincibilité temporaire
+        player.moving = false;
+        gameRunning = false;
+
+        setTimeout(() => {
+          resetPlayer();
+          respawning = false;
+          gameRunning = true;
+        }, 2000); // délai 2 secondes avant respawn
+      }
+      return;
+    }
+  }
 }
 
 function gameLoop(){
@@ -295,13 +316,68 @@ function gameLoop(){
 /* =======================
    TIMER
 ======================= */
-function startTimer(){
-  timeRemaining=LEVEL_TIME; timerEl.textContent='Temps restant : '+formatTime(timeRemaining);
-  timerInterval = setInterval(()=>{
-    if(!gameRunning) return;
-    timeRemaining--; timerEl.textContent='Temps restant : '+formatTime(timeRemaining);
-    if(timeRemaining<=0){ alert('Temps écoulé !'); stopGame(); }
-  },1000);
+function checkCollision() {
+  if (respawning) return;  // ignore les collisions pendant le respawn
+
+  for (const g of ghosts) {
+    if (Math.abs(g.xPos - player.xPos) < scale*0.5 &&
+        Math.abs(g.yPos - player.yPos) < scale*0.5) {
+      lives--;
+      updateScore();
+      if (lives <= 0) {
+        gameOver("Game Over ! Vous avez perdu toutes vos vies.");
+      } else {
+        respawning = true;   // active invincibilité temporaire
+        player.moving = false;
+        gameRunning = false;
+
+        setTimeout(() => {
+          resetPlayer();
+          respawning = false;
+          gameRunning = true;
+        }, 2000); // délai 2 secondes avant respawn
+      }
+      return;
+    }
+  }
+}
+
+function startTimer() {
+  timeRemaining = LEVEL_TIME;
+  timerEl.textContent = `Temps restant : ${formatTime(timeRemaining)}`;
+  if (timerInterval) clearInterval(timerInterval);
+  timerInterval = setInterval(() => {
+    timeRemaining--;
+    timerEl.textContent = `Temps restant : ${formatTime(timeRemaining)}`;
+    if (timeRemaining <= 0) {
+      clearInterval(timerInterval);
+      gameOver("Temps écoulé ! Fin de la partie.");
+    }
+  }, 1000);
+}
+
+function stopTimer(){ if (timerInterval) clearInterval(timerInterval); }
+
+function showVictory(msg, onOk){
+  stopTimer();
+  gameRunning = false;
+  if (gameInterval) clearInterval(gameInterval);
+  if (confirm(msg)) onOk();
+}
+
+function nextLabyrinth() {
+  currentLabIndex++;
+  if (currentLabIndex >= labyrinths.length) {
+    alert("Félicitations ! Vous avez terminé les 4 labyrinthes !");
+    gameRunning = false;
+    clearInterval(gameInterval);
+    stopTimer();
+    return;
+  }
+  // on conserve score & vies comme dans ta version précédente ? Ici on conserve.
+  generateLabyrinth();
+  startTimer();
+  startLoop();
 }
 
 /* =======================
