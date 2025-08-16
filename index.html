@@ -8,12 +8,12 @@
   body { background:#000; margin:0; font-family:monospace; color:#fff; text-align:center; user-select:none; }
   #game-container { display:inline-block; position:relative; }
   canvas { background:#ccc; display:block; margin:0 auto; image-rendering:pixelated; }
-  #score { font-size:18px; margin:6px 0 10px; font-weight:bold; }
-  #controls { font-size:18px; margin:10px 0 6px; display:flex; gap:10px; align-items:center; justify-content:center; flex-wrap:wrap; }
+  #score { font-size:16px; margin:6px 0 10px; font-weight:bold; }
+  #controls { font-size:16px; margin:10px 0 6px; display:flex; gap:10px; align-items:center; justify-content:center; flex-wrap:wrap; }
   label { opacity:.9; }
   input, select, button { font-size:18px; padding:6px 10px; }
-  #timer { font-size:20px; margin:6px 0 10px; font-weight:bold; }
-  #mobile-controls { margin:4px 10px; display:flex; justify-content:center; gap:3px; flex-wrap:wrap; }
+  #timer { font-size:18px; margin:6px 0 10px; font-weight:bold; }
+  #mobile-controls { margin:0px 10px; display:flex; justify-content:center; gap:3px; flex-wrap:wrap; }
   #mobile-controls button { width:120px; height:90px; font-size:65px; }
   #MaJ { font-size:16px; color: red;       /* texte rouge */font-weight: bold; /* texte en gras */
 }
@@ -66,9 +66,9 @@ input, select, textarea {
   </select>
   <button id="startBtn">Démarrer</button>
 </div>
-
-<div id="timer">Temps restant : 02:00</div>
+  
 <div id="MaJ">!! Mise à jour le 17/08/2025 !!</div>  <!-- mise a jour date -->
+<div id="timer">Temps restant : 02:00</div>
 <div id="score">Score : 0 || Vies : 4</div>
 <div id="game-container">
   <canvas id="game"></canvas>
