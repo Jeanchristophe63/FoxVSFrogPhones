@@ -347,7 +347,7 @@ function nextLevel() {
 let lastTouchEnd = 0;
 document.addEventListener('touchend', function (event) {
   const now = Date.now();
-  if (now - lastTouchEnd <= 120) event.preventDefault();
+  if (now - lastTouchEnd <= 600) event.preventDefault();
   lastTouchEnd = now;
 }, false);
 
