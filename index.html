@@ -155,6 +155,7 @@ let timerInterval = null;
 let timeRemaining = LEVEL_TIME;
 let gameRunning = false;
 let respawning = false;
+let totalFrogs = 0; // >>> AJOUT
 
   // Images
 const imgRenard = new Image();
@@ -187,6 +188,15 @@ function generateLabyrinth(){
       if(labyrinth[r][c]===0 && Math.random()*100>FROG_SPAWN_RATE) labyrinth[r][c]=2;
     }
   }
+  totalFrogs = 0;
+for(let r=1;r<rows-1;r++){
+  for(let c=1;c<cols-1;c++){
+    if(labyrinth[r][c]===0 && Math.random()*100>FROG_SPAWN_RATE){
+      labyrinth[r][c]=2;
+      totalFrogs++;
+    }
+  }
+}
   player.x=1; player.y=1; player.xPos=player.x*scale; player.yPos=player.y*scale; player.dir=null; player.moving=false;
   generateGhosts();
 }
@@ -263,6 +273,14 @@ function movePlayer(){
   if(player.yPos<ty) player.yPos=Math.min(player.yPos+PLAYER_SPEED,ty);
   else if(player.yPos>ty) player.yPos=Math.max(player.yPos-PLAYER_SPEED,ty);
   if(player.xPos===tx && player.yPos===ty){ player.moving=false; if(labyrinth[player.y][player.x]===0){ labyrinth[player.y][player.x]=2; score++; updateScore(); } }
+  if(labyrinth[player.y][player.x]===0){
+  labyrinth[player.y][player.x]=2; // mangée
+  score++;
+  updateScore();
+  if(score >= totalFrogs){   // >>> AJOUT
+    handleWin();
+  }
+}
 }
 
 function moveGhosts(){
@@ -307,16 +325,6 @@ function startTimer(){
   /* =======================
    VICTOIRE
 ======================= */
-function checkWin(){  // >>> AJOUT
-  for(let r=0;r<rows;r++){
-    for(let c=0;c<cols;c++){
-      if(labyrinth[r][c]===0){ // encore une grenouille
-        return false;
-      }
-    }
-  }
-  return true;
-}
 
 function handleWin(){  // >>> AJOUT
   if(currentLabIndex < labyrinths.length-1){
