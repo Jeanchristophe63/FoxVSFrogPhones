@@ -70,7 +70,7 @@ input, select, textarea {
 </div>
 
 <div id="timer">Temps restant : 02:00</div>
-<div id="MaJ"></div>
+<div id="MaJ">!! Mise à jour le 17/08/2025 !!</div> <!-- mise a jour date -->
 <div id="score">Score : 0 || Vies : 4</div>
 <div id="game-container">
   <canvas id="game"></canvas>
@@ -95,7 +95,6 @@ input, select, textarea {
 /* =======================
    PARAMÈTRES
 ======================= */
-const Date = 17/08/2025;  
 const PLAYER_SPEED = 1000;
 const GHOST_SPEED = 3;
 const FROG_SPAWN_RATE = 99.9;
@@ -186,7 +185,6 @@ const timerEl = document.getElementById('timer');
 const startBtn = document.getElementById('startBtn');
 const scaleInput = document.getElementById('scale');
 const ghostCountSel = document.getElementById('ghostCount');
-const Date = document.getElementById('MaJ').textContent = `!! Mis à jour le ${Date} !!`;
 
 const mobileUp = document.getElementById('up');
 const mobileDown = document.getElementById('down');
