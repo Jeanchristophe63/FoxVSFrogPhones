@@ -208,18 +208,23 @@ function clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
 ======================= */
 function generateLabyrinth(){
   labyrinth = JSON.parse(JSON.stringify(labyrinths[currentLabIndex]));
-  labyrinth[1][1]=labyrinth[1][2]=labyrinth[2][1]=labyrinth[2][2]=labyrinth[2][3]=labyrinth[3][1]=0;
+  // Placer le départ
+  player.x = 1; player.y = 1;
+  player.xPos = player.x*scale; player.yPos = player.y*scale;
+  player.moving = false; player.dir = null;
+
+  // Placer toutes les grenouilles sur les cases vides
   totalFrogs = 0;
   for(let r=1;r<rows-1;r++){
     for(let c=1;c<cols-1;c++){
-      if(labyrinth[r][c]===0 && Math.random()*100>FROG_SPAWN_RATE){
-        labyrinth[r][c]=2;
+      if(labyrinth[r][c]===0){
+        labyrinth[r][c] = 2; // 2 = grenouille
         totalFrogs++;
       }
     }
   }
-  player.x=1; player.y=1; player.xPos=player.x*scale; player.yPos=player.y*scale; player.dir=null; player.moving=false;
   generateGhosts();
+  updateScore();
 }
 
 function generateGhosts(){
@@ -244,7 +249,34 @@ function drawGhosts(){ ghosts.forEach(g=>{ const gx=g.xPos+scale/2; const gy=g.y
 /* =======================
    LOGIQUE
 ======================= */
-function movePlayer(){ if(!player.moving) return; const tx=player.x*scale, ty=player.y*scale; if(player.xPos<tx) player.xPos=Math.min(player.xPos+PLAYER_SPEED,tx); else if(player.xPos>tx) player.xPos=Math.max(player.xPos-PLAYER_SPEED,tx); if(player.yPos<ty) player.yPos=Math.min(player.yPos+PLAYER_SPEED,ty); else if(player.yPos>ty) player.yPos=Math.max(player.yPos-GHOST_SPEED,tx); if(player.xPos===tx && player.yPos===ty){ player.moving=false; if(labyrinth[player.y][player.x]===0){ labyrinth[player.y][player.x]=2; score++; updateScore(); if(score>=totalFrogs){ showPopup("🎉 Bravo, labyrinthe terminé !"); } } } }
+function movePlayer(){
+  if(!player.moving) return;
+
+  const tx = player.x * scale;
+  const ty = player.y * scale;
+
+  // Déplacement fluide
+  if(player.xPos < tx) player.xPos = Math.min(player.xPos + PLAYER_SPEED, tx);
+  else if(player.xPos > tx) player.xPos = Math.max(player.xPos - PLAYER_SPEED, tx);
+  if(player.yPos < ty) player.yPos = Math.min(player.yPos + PLAYER_SPEED, ty);
+  else if(player.yPos > ty) player.yPos = Math.max(player.yPos - PLAYER_SPEED, ty);
+
+  // Arrivé sur la case
+  if(player.xPos === tx && player.yPos === ty){
+    player.moving = false;
+
+    // Ramasser la grenouille si présente
+    if(labyrinth[player.y][player.x] === 2){
+      labyrinth[player.y][player.x] = 0; // Supprime grenouille
+      score++;
+      updateScore();
+
+      if(score >= totalFrogs){
+        showPopup("🎉 Bravo, labyrinthe terminé !");
+      }
+    }
+  }
+}
 function moveGhosts(){ ghosts.forEach(g=>{ if(g.moving){ const tx=g.x*scale, ty=g.y*scale; g.xPos=g.xPos<tx?Math.min(g.xPos+GHOST_SPEED,tx):Math.max(g.xPos-GHOST_SPEED,tx); g.yPos=g.yPos<ty?Math.min(g.yPos+GHOST_SPEED,ty):Math.max(g.yPos-GHOST_SPEED,ty); if(g.xPos===tx && g.yPos===ty) g.moving=false; } else { const dirs=['left','right','up','down']; let options=dirs.filter(d=>{ let nx=g.x, ny=g.y; if(d==='left') nx--; else if(d==='right') nx++; else if(d==='up') ny--; else if(d==='down') ny++; return canMove(nx,ny); }); if(options.length>1){ const opp={left:'right',right:'left',up:'down',down:'up'}; options=options.filter(d=>d!==opp[g.dir]); if(options.length===0) options=dirs;} if(options.length){ g.dir=options[Math.floor(Math.random()*options.length)]; if(g.dir==='left') g.x--; else if(g.dir==='right') g.x++; else if(g.dir==='up') g.y--; else if(g.dir==='down') g.y++; g.moving=true; } } }); }
 function checkCollision(){ if(respawning) return; for(const g of ghosts){ if(Math.abs(g.x-player.x)+Math.abs(g.y-player.y)===0){ lives--; updateScore(); if(lives<=0){ alert('Game Over !'); stopGame(); return;} respawning=true; setTimeout(()=>{ player.x=1; player.y=1; player.xPos=player.x*scale; player.yPos=player.y*scale; respawning=false; },500); } } }
 
