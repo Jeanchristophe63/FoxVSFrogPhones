@@ -65,7 +65,7 @@ input, select, textarea {
   <button id="startBtn">Démarrer</button>
 </div>
 
-<div id="timer">Temps restant : 02:40</div>
+<div id="timer">Temps restant : 02:30</div>
 <div id="MaJ">!! Mis à jour le 16/08/25 !!</div>
 <div id="score">Score : 0 | Vies : 3</div>
 <div id="game-container">
@@ -313,15 +313,7 @@ function drawEffects(ctx) {
     if (e.life <= 0) effects.splice(i, 1);
   }
 }
-  function drawGame() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  drawLabyrinth();
-  drawPlayer();
-  drawGhosts();
-
-  // effets par-dessus
-  drawEffects(ctx);
+  
 /* =======================
    LOGIQUE
 ======================= */
@@ -388,22 +380,16 @@ function handleKeyDown(e) {
   const t = labyrinth[y]?.[x];
   return t !== undefined && t !== 1; // bloque uniquement les murs normaux
 }
- function hitWall(x, y) {
-  let tile = labyrinth[y][x];
+  function hitWall(x, y) {
+  const key = ${x},${y};
+  if (!damageMap[key]) damageMap[key] = 0;
+  damageMap[key]++;
 
-  if (tile === 3) {
-    labyrinth[y][x] = 4; // première fissure
-  } else if (tile === 4) {
-    labyrinth[y][x] = 5; // mur plus abîmé
-  } else if (tile === 5) {
-    labyrinth[y][x] = 0; // mur détruit
-
-    // 👉 Ajout d'un effet visuel
-    effects.push({ x, y, life: 10 });
-
-    // 👉 (optionnel) jouer un son
-    // let sound = new Audio("explosion.mp3");
-    // sound.play();
+  if(damageMap[key] === 1) labyrinth[y][x] = 4;      // 1er coup → noir
+  else if(damageMap[key] === 2) labyrinth[y][x] = 5; // 2e coup → orange
+  else if(damageMap[key] >= WALL_HITS_REQUIRED) {    // 3e coup → mur détruit
+    labyrinth[y][x] = 0; 
+    delete damageMap[key];
   }
 }
   
