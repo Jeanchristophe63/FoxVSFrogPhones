@@ -202,7 +202,7 @@ let respawning = false;
 let totalFrogs = 0;
 let scores = [];
 let labyrinthTimes = [];
-let currentMessage = "By JC Prolhac";  // message par défaut
+let currentMessage = "By l'inconnue";  // message par défaut
 
 const imgRenard = new Image();
 const imgGrenouille = new Image();
@@ -256,11 +256,6 @@ function generateGhosts(){
     let tries=0; while(!canMove(x,y)&&tries<30){ x=clamp(x+(Math.random()<0.5?-1:1),1,cols-2); y=clamp(y+(Math.random()<0.5?-1:1),1,rows-2); tries++; }
     ghosts.push({x,y,xPos:x*scale,yPos:y*scale,dir:'left',color:palette[i%palette.length],moving:false});
   }
-}
-  function finishLabyrinth() {
-  finished = true;
-  clearInterval(timerId);
-  console.log("✅ Labyrinthe terminé, chrono arrêté !");
 }
 
 /* =======================
@@ -352,7 +347,6 @@ function movePlayer(){
 
       if(score >= totalFrogs){
         showPopup("🎉 Bravo, labyrinthe terminé ! \nEt au faite \nON AIME PAS LES GRENOUILLES \n❤️🖤");
-        finishLabyrinth();
       }
     }
   }
