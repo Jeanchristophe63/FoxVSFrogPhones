@@ -285,7 +285,7 @@ function drawLabyrinth() {
         ctx.fillStyle = '#ccc'; // fond vide
         ctx.fillRect(c*scale, r*scale, scale, scale);
         if (imgGrenouille.complete) {
-          ctx.drawImage(imgGrenouille, c*scale + scale*0.8, r*scale + scale*0.8, scale*0.8, scale*0.8);
+          ctx.drawImage(imgGrenouille, c*scale + scale*0.05, r*scale + scale*0.05, scale*1, scale*1);
         }
       } 
       else if (t === 0) {     // vide
