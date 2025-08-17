@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Pacman_Renard — 4 labyrinthes_Phone</title>
+<style>
+  body { background:#000; margin:0; font-family:monospace; color:#fff; text-align:center; user-select:none; }
+  #game-container { display:inline-block; position:relative; }
+  canvas { background:#ccc; display:block; margin:0 auto; image-rendering:pixelated; }
+  #score { font-size:16px; margin:6px 0 10px; font-weight:bold; }
+  #controls { font-size:16px; margin:10px 0 6px; display:flex; gap:10px; align-items:center; justify-content:center; flex-wrap:wrap; }
+  label { opacity:.9; }
+  input, select, button { font-size:18px; padding:6px 10px; }
+  #timer { font-size:20px; margin:6px 0 10px; font-weight:bold; }
+  #mobile-controls { margin:0.5px 0.5px; display:flex; justify-content:center; gap:1px; flex-wrap:wrap; }
+  #mobile-controls button { width:120px; height:85px; font-size:65px; }
+  #MaJ { font-size:16px; color: red;       /* texte rouge */font-weight: bold; /* texte en gras */
+}
+
+  html, body {
+  touch-action: manipulation; /* empêche zoom/pinch et certains gestes */
+}
+
+input, select, textarea {
+  font-size: 8px; /* iOS ne zoome pas automatiquement sur les champs >=8px */
+}
+  /* POPUP */
+  #popup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0,0,0,0.9);
+    color: #fff;
+    padding: 20px 30px;
+    border-radius: 12px;
+    font-size: 20px;
+    display: none;
+    z-index: 10000;
+    text-align: center;
+  }
+  #popup button {
+    margin-top: 12px;
+    padding: 8px 14px;
+    background: #ff9800;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    color: white;
+    font-size: 16px;
+  }
+</style>
+</head>
+<body>
+
+<div id="controls">
+  <label for="scale">Zoom :</label>
+  <input type="number" id="scale" value="30" min="16" max="64" step="4" /> <!-- Value = Zoom fenetre -->
+  <label for="ghostCount">Fantômes (2–5) :</label>
+  <select id="ghostCount">
+    <option value="2">2</option>
+    <option value="3" selected>3</option>
+    <option value="4">4</option>
+    <option value="5">5</option>
+  </select>
+  <button id="startBtn">Démarrer</button>
+</div>
+  
+<div id="MaJ">!! Mise à jour le 17/08/2025 !!</div>  <!-- mise a jour date -->
+<div id="timer">Temps restant : 02:00</div>
+<div id="score">Score : 0 || Vies : 4</div>
+<div id="game-container">
+  <canvas id="game"></canvas>
+</div>
+
+<!-- Flèches mobile -->
+<div id="mobile-controls">
+  <button id="up">▲</button>
+</div>
+<div id="mobile-controls">
+  <button id="left">◀</button>
+  <button id="down">▼</button>
+  <button id="right">▶</button>
+</div>
+
+<div id="popup">
+  <p id="popupMessage">🎉 Bravo, labyrinthe terminé !</p>
+  <button onclick="nextLevel()">Continuer</button>
+</div>
+
+<script>
+/* =======================
+   PARAMÈTRES
+======================= */
+const PLAYER_SPEED = 1000;
+const GHOST_SPEED = 3;
+const FROG_SPAWN_RATE = 99.9;
+const LEVEL_TIME = 120;
+const DEFAULT_NUM_GHOSTS = 2;
+const WALL_HITS_REQUIRED = 3; // nombre de coups nécessaires pour casser un mur
+const damageMap = {};
+const rows = 15, cols = 14;
+
+const labyrinths = [
+  [ // Labyrinthe 1
+    [3, 1, 1, 3, 1, 1, 1, 1, 1, 3, 3, 1, 1, 3],
+    [0, 0, 3, 1, 3, 0, 0, 0, 3, 1, 1, 3, 0, 0],
+    [0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0],
+    [0, 0, 3, 0, 0, 0, 0, 0, 3, 0, 0, 3, 0, 0],
+    [1, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 1],
+    [1, 0, 3, 1, 3, 0, 0, 0, 3, 0, 0, 3, 0, 1],
+    [1, 0, 1, 3, 1, 0, 0, 0, 1, 0, 0, 1, 0, 1],
+    [1, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 1],
+    [1, 0, 1, 3, 1, 0, 0, 0, 1, 3, 3, 1, 0, 1],
+    [1, 0, 3, 1, 3, 0, 0, 0, 3, 1, 1, 3, 0, 1],
+    [1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1],
+    [0, 0, 3, 1, 3, 0, 0, 0, 3, 0, 3, 1, 0, 0],
+    [0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0],
+    [0, 0, 3, 1, 3, 0, 0, 0, 3, 1, 1, 3, 0, 0],
+    [3, 1, 1, 3, 1, 1, 1, 1, 1, 3, 3, 1, 1, 3],
+  ],
+  [ // Labyrinthe 2
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    [1,0,0,0,1,0,0,0,0,1,0,0,0,1],
+    [1,0,1,0,1,0,1,1,0,1,0,1,0,1],
+    [1,0,1,0,0,0,1,0,0,1,0,1,0,1],
+    [1,0,1,1,1,0,1,0,1,1,0,1,0,1],
+    [1,0,0,0,1,0,0,0,1,0,0,1,0,1],
+    [1,1,1,0,1,1,1,0,1,0,1,1,0,1],
+    [1,0,0,0,0,0,0,0,1,0,0,0,0,1],
+    [1,0,1,1,1,1,1,1,1,1,1,1,0,1],
+    [1,0,0,0,0,0,0,0,0,0,0,1,0,1],
+    [1,1,1,1,0,1,1,1,1,1,0,1,0,1],
+    [1,0,0,0,0,0,0,0,0,1,0,1,0,1],
+    [1,0,1,1,1,1,1,1,0,1,0,0,0,1],
+    [1,0,0,0,0,0,0,0,0,1,1,1,0,1],
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+  ],
+  [ // Labyrinthe 3
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    [1,0,1,0,0,0,1,0,0,0,0,0,0,1],
+    [1,0,1,1,1,0,1,0,1,1,1,1,0,1],
+    [1,0,0,0,1,0,0,0,1,0,0,1,0,1],
+    [1,1,1,0,1,1,1,1,1,0,1,1,0,1],
+    [1,0,0,0,0,0,0,0,0,0,1,0,0,1],
+    [1,0,1,1,1,1,1,1,1,0,1,0,1,1],
+    [1,0,0,0,0,0,0,0,1,0,0,0,0,1],
+    [1,1,1,1,1,1,0,1,1,1,1,1,0,1],
+    [1,0,0,0,0,0,0,0,0,0,0,1,0,1],
+    [1,0,1,1,1,1,1,1,1,1,0,1,0,1],
+    [1,0,0,0,0,0,0,0,0,1,0,1,0,1],
+    [1,0,1,1,1,1,1,1,0,1,0,0,0,1],
+    [1,0,0,0,0,0,0,0,0,1,1,1,0,1],
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+  ],
+  [ // Labyrinthe 4
+    [3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3],
+    [1, 1, 0, 0, 1, 1, 1, 0, 0, 1, 1, 0, 1, 1],
+    [1, 0, 0, 1, 1, 1, 0, 0, 1, 1, 0, 0, 0, 1],
+    [1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1],
+    [1, 1, 0, 1, 1, 1, 0, 0, 0, 1, 1, 0, 1, 1],
+    [1, 0, 0, 1, 0, 1, 1, 1, 0, 1, 0, 0, 0, 1],
+    [1, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 1],
+    [1, 1, 1, 0, 0, 0, 3, 3, 0, 0, 1, 1, 1, 1],
+    [1, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 1, 1, 1],
+    [1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1],
+    [1, 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 1],
+    [1, 0, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 0, 1],
+    [1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1],
+    [1, 1, 1, 0, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1],
+    [3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3],
+  ]
+];
+
+/* =======================
+   DOM & ÉTAT
+======================= */
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+const scoreEl = document.getElementById('score');
+const timerEl = document.getElementById('timer');
+const startBtn = document.getElementById('startBtn');
+const scaleInput = document.getElementById('scale');
+const ghostCountSel = document.getElementById('ghostCount');
+
+const mobileUp = document.getElementById('up');
+const mobileDown = document.getElementById('down');
+const mobileLeft = document.getElementById('left');
+const mobileRight = document.getElementById('right');
+
+let scale = parseInt(scaleInput.value);
+let labyrinth = [];
+let score = 0, lives = 4, currentLabIndex = 0;
+let player = {x:1, y:1, xPos:1*scale, yPos:1*scale, dir:null, moving:false};
+let ghosts = [];
+let gameInterval = null;
+let timerInterval = null;
+let timeRemaining = LEVEL_TIME;
+let gameRunning = false;
+let respawning = false;
+let totalFrogs = 0;
+let scores = [];
+
+const imgRenard = new Image();
+const imgGrenouille = new Image();
+imgRenard.src   = 'https://png.pngtree.com/png-vector/20240814/ourmid/pngtree-realistic-fox-head-illustration-png-image_13481187.png';
+imgGrenouille.src = 'https://static.vecteezy.com/system/resources/thumbnails/024/508/723/small_2x/frog-isolated-on-background-with-generative-ai-png.png';
+
+  showPopup("Objectifs : Eliminer les Grenouilles ! \nAjuste avec les boutons en haut :\n-Le ZOOM \n-Le nombre de Ghost \net \nCLIQUE SUR DEMARRER \n❤️🖤");
+/* =======================
+   UTILS
+======================= */
+function resizeCanvas() { canvas.width = cols*scale; canvas.height = rows*scale; }
+function updateScore(){ scoreEl.textContent=`Score : ${score} | Vies : ${lives}`; }
+function formatTime(s){ return `${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`; }
+function clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
+
+/* =======================
+   LABYRINTHE
+======================= */
+function generateLabyrinth(){
+  labyrinth = JSON.parse(JSON.stringify(labyrinths[currentLabIndex]));
+
+  // Placer le départ
+  player.x = 1; player.y = 1;
+  player.xPos = player.x*scale; 
+  player.yPos = player.y*scale;
+  player.moving = false; 
+  player.dir = null;
+
+  // Placer les grenouilles sur un pourcentage des cases vides
+  totalFrogs = 0;
+  for(let r=1;r<rows-1;r++){
+    for(let c=1;c<cols-1;c++){
+      if(labyrinth[r][c]===0 && Math.random()*100 < FROG_SPAWN_RATE){
+        labyrinth[r][c] = 2; // 2 = grenouille
+        totalFrogs++;
+      }
+    }
+  }
+
+  generateGhosts();
+  updateScore();
+}
+
+function generateGhosts(){
+  const wanted = clamp(parseInt(ghostCountSel.value||DEFAULT_NUM_GHOSTS),2,5);
+  ghosts=[];
+  const palette=['red','black','blue','orange','magenta','purple','yellow'];
+  const spawns=[{x:cols-2,y:1},{x:cols-2,y:rows-2},{x:1,y:rows-2},{x:Math.floor(cols/2),y:Math.floor(rows/2)},{x:cols-2,y:Math.floor(rows/2)}];
+  for(let i=0;i<wanted;i++){
+    let {x,y}=spawns[i%spawns.length];
+    let tries=0; while(!canMove(x,y)&&tries<30){ x=clamp(x+(Math.random()<0.5?-1:1),1,cols-2); y=clamp(y+(Math.random()<0.5?-1:1),1,rows-2); tries++; }
+    ghosts.push({x,y,xPos:x*scale,yPos:y*scale,dir:'left',color:palette[i%palette.length],moving:false});
+  }
+}
+
+/* =======================
+   DESSIN
+======================= */
+function drawLabyrinth() {
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const t = labyrinth[r][c];
+
+      if (t === 1) {          // mur normal
+        ctx.fillStyle = '#800000';
+        ctx.fillRect(c*scale, r*scale, scale, scale);
+      } 
+      else if (t === 3) {     // mur cassable initial
+        ctx.fillStyle = '#000000'; // noir
+        ctx.fillRect(c*scale, r*scale, scale, scale);
+      } 
+      else if (t === 4) {     // 1er coup
+        ctx.fillStyle = '#ff0000'; // rouge
+        ctx.fillRect(c*scale, r*scale, scale, scale);
+      } 
+      else if (t === 5) {     // 2e coup
+        ctx.fillStyle = '#ff6600'; // orange
+        ctx.fillRect(c*scale, r*scale, scale, scale);
+      } 
+      else if (t === 2) {     // grenouille
+        ctx.fillStyle = '#ccc'; // fond vide
+        ctx.fillRect(c*scale, r*scale, scale, scale);
+        if (imgGrenouille.complete) {
+          ctx.drawImage(imgGrenouille, c*scale + scale*0.05, r*scale + scale*0.05, scale*1, scale*1);
+        }
+      } 
+      else if (t === 0) {     // vide
+        ctx.fillStyle = '#ccc';
+        ctx.fillRect(c*scale, r*scale, scale, scale);
+        // NE PLUS DESSINER LA GRENOUILLE ICI
+      }
+    }
+  }
+}
+function drawPlayer() {
+  if(imgRenard.complete){ 
+    ctx.drawImage(imgRenard, player.xPos, player.yPos, scale, scale); 
+  } else { 
+    ctx.fillStyle='#ff6600'; 
+    ctx.beginPath(); 
+    ctx.arc(player.xPos+scale/2, player.yPos+scale/2, scale/2-4, 0, Math.PI*2); 
+    ctx.fill(); 
+  } 
+}
+function drawGhosts(){ ghosts.forEach(g=>{ const gx=g.xPos+scale/2; const gy=g.yPos+scale/2; ctx.fillStyle=g.color; ctx.beginPath(); ctx.arc(gx,gy,scale/2-4,0,Math.PI*2); ctx.fill(); ctx.fillStyle='#fff'; ctx.font=`bold ${Math.floor(scale/2)}px monospace`; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('R2',gx,gy); }); }
+  
+/* =======================
+   LOGIQUE
+======================= */
+function movePlayer(){
+  if(!player.moving) return;
+
+  const tx = player.x * scale;
+  const ty = player.y * scale;
+
+  // Déplacement fluide
+  if(player.xPos < tx) player.xPos = Math.min(player.xPos + PLAYER_SPEED*0.04, tx);
+  else if(player.xPos > tx) player.xPos = Math.max(player.xPos - PLAYER_SPEED*0.04, tx);
+  if(player.yPos < ty) player.yPos = Math.min(player.yPos + PLAYER_SPEED*0.04, ty);
+  else if(player.yPos > ty) player.yPos = Math.max(player.yPos - PLAYER_SPEED*0.04, ty);
+
+  // Arrivé sur la case
+  if(Math.abs(player.xPos - tx) < 1 && Math.abs(player.yPos - ty) < 1){
+    player.xPos = tx;
+    player.yPos = ty;
+    player.moving = false;
+
+    // Ramasser la grenouille si présente
+    if(labyrinth[player.y][player.x] === 2){
+      labyrinth[player.y][player.x] = 0; // Supprime grenouille
+      score++;
+      updateScore();
+
+      if(score >= totalFrogs){
+        showPopup("🎉 Bravo, labyrinthe terminé ! \nEt au faite \nON AIME PAS LES GRENOUILLES \n❤️🖤");
+      }
+    }
+  }
+}
+function handleKeyDown(e) {
+  if (!gameRunning || player.moving) return;
+
+  let nx = player.x, ny = player.y;
+
+  if (e.key === 'ArrowLeft') nx--;
+  else if (e.key === 'ArrowRight') nx++;
+  else if (e.key === 'ArrowUp') ny--;
+  else if (e.key === 'ArrowDown') ny++;
+  else return;
+
+  if (!labyrinth[ny] || labyrinth[ny][nx] == null) return;
+
+  const tile = labyrinth[ny][nx];
+
+  if (tile === 1) return; // mur normal : bloqué
+
+  // Mur cassable
+  if (tile === 3 || tile === 4 || tile === 5) {
+    hitWall(nx, ny); 
+    // le joueur ne bouge que si le mur est complètement détruit
+    if (labyrinth[ny][nx] !== 2) return;
+  }
+
+  // Déplacement autorisé si case libre (0 = grenouille ou 2 = vide)
+  player.x = nx;
+  player.y = ny;
+  player.moving = true;
+  player.dir = e.key.replace('Arrow','').toLowerCase();
+}
+
+function hitWall(x, y) {
+  const key = `${x},${y}`;
+  if (!damageMap[key]) damageMap[key] = 0;
+  damageMap[key]++;
+
+  // changer le tile selon les coups
+  if (damageMap[key] === 1) labyrinth[y][x] = 4;       // 1er coup → noir
+  else if (damageMap[key] === 2) labyrinth[y][x] = 5;  // 2e coup → orange
+  else if (damageMap[key] >= WALL_HITS_REQUIRED) {
+    labyrinth[y][x] = 2; // mur cassé → fond
+    delete damageMap[key];
+  }
+
+  console.log(`Mur (${x},${y}) coups : ${damageMap[key]}`);
+}
+  
+  function canMove(x, y) {
+  const t = labyrinth[y]?.[x];
+  // déplacement autorisé uniquement sur vide ou grenouille
+  return t === 0 || t === 2;
+}
+  
+function moveGhosts(){ ghosts.forEach(g=>{ if(g.moving){ const tx=g.x*scale, ty=g.y*scale; g.xPos=g.xPos<tx?Math.min(g.xPos+GHOST_SPEED,tx):Math.max(g.xPos-GHOST_SPEED,tx); g.yPos=g.yPos<ty?Math.min(g.yPos+GHOST_SPEED,ty):Math.max(g.yPos-GHOST_SPEED,ty); if(g.xPos===tx && g.yPos===ty) g.moving=false; } else { const dirs=['left','right','up','down']; let options=dirs.filter(d=>{ let nx=g.x, ny=g.y; if(d==='left') nx--; else if(d==='right') nx++; else if(d==='up') ny--; else if(d==='down') ny++; return canMove(nx,ny); }); if(options.length>1){ const opp={left:'right',right:'left',up:'down',down:'up'}; options=options.filter(d=>d!==opp[g.dir]); if(options.length===0) options=dirs;} if(options.length){ g.dir=options[Math.floor(Math.random()*options.length)]; if(g.dir==='left') g.x--; else if(g.dir==='right') g.x++; else if(g.dir==='up') g.y--; else if(g.dir==='down') g.y++; g.moving=true; } } }); }
+function checkCollision() {
+  if(respawning) return;
+  for(const g of ghosts){
+    if(player.x === g.x && player.y === g.y){
+      lives--;
+      updateScore();
+
+      if(lives <= 0){
+        alert('Game Over !');
+        stopGame();
+        return;
+      }
+      if(player.x === g.x && player.y === g.y){
+    if(navigator.vibrate) navigator.vibrate([200]); // vibration
+}
+
+      respawning = true;
+      setTimeout(()=>{
+        player.x = 1;
+        player.y = 1;
+        player.xPos = player.x * scale;
+        player.yPos = player.y * scale;
+        respawning = false;
+      }, 500);
+    }
+  }
+}
+
+function gameLoop(){ ctx.clearRect(0,0,canvas.width,canvas.height); drawLabyrinth(); drawPlayer(); drawHUD(); drawGhosts(); movePlayer(); moveGhosts(); checkCollision(); requestAnimationFrame(draw); }
+
+/* =======================
+   TIMER
+======================= */
+function startTimer(){ timeRemaining=LEVEL_TIME; timerEl.textContent='Temps restant : '+formatTime(timeRemaining); timerInterval=setInterval(()=>{ if(!gameRunning) return; timeRemaining--; timerEl.textContent='Temps restant : '+formatTime(timeRemaining); if(timeRemaining<=0){ alert('Temps écoulé !'); stopGame(); } },1000); }
+
+/* =======================
+   CONTRÔLES
+======================= */
+function mobileControl(dir){ if(player.moving||respawning) return; let nx=player.x, ny=player.y; if(dir==='left') nx--; else if(dir==='right') nx++; else if(dir==='up') ny--; else if(dir==='down') ny++; if(canMove(nx,ny)){ player.x=nx; player.y=ny; player.moving=true; } }
+
+/* =======================
+   DÉMARRAGE / STOP
+======================= */
+function startGame(){
+  lives = 4;           // réinitialise les vies
+  score = 0;           // réinitialise le score
+  currentLabIndex = 0; // recommence au niveau 0
+  currentLevel = 0; // <-- ajouter
+  gameRunning = true;
+  startTime = Date.now(); // mémorise le début du labyrinthe
+  generateLabyrinth();
+  updateScore();
+  resizeCanvas();
+  if(gameInterval) clearInterval(gameInterval);
+  gameInterval=setInterval(gameLoop,40);
+  if(timerInterval) clearInterval(timerInterval);
+  startTimer();
+}
+function stopGame(){ gameRunning=false; if(gameInterval) clearInterval(gameInterval); if(timerInterval) clearInterval(timerInterval); }
+function finishLabyrinthe() {
+  clearInterval(timer);
+  scores.push(timeLeft); // on enregistre le temps restant
+  console.log("Temps restant enregistré :", timeLeft);
+}
+function drawHUD() {
+  ctx.fillStyle = "white";
+  ctx.font = "16px monospace";
+  ctx.textAlign = "center";
+
+  // Position de base = juste sous la flèche du haut
+  const baseX = canvas.width / 2;
+  const baseY = canvas.height - 10; // en bas du canvas
+
+  // Gauche : derniers temps enregistrés
+  ctx.textAlign = "right";
+  ctx.fillText("Temps 1 : " + (scores[0] ?? "-"), baseX - 30, baseY);
+
+  // Droite : deuxième score
+  ctx.textAlign = "left";
+  ctx.fillText("Temps 2 : " + (scores[1] ?? "-"), baseX + 30, baseY);
+}
+
+/* =======================
+   POPUP
+======================= */
+let currentLevel = 0;
+const levels = [labyrinths[0], labyrinths[1], labyrinths[2], labyrinths[3]];
+
+function showPopup(message = "🎉 Bravo, labyrinthe terminé ! \nEt au faite \nON AIME PAS LES GRENOUILLES \n❤️🖤") {
+  const popupMessageEl = document.getElementById("popupMessage");
+  // Remplace les sauts de ligne par des <br> pour HTML
+  popupMessageEl.innerHTML = message.replace(/\n/g, "<br>");
+  document.getElementById("popup").style.display = "block";
+}
+
+function nextLevel() {
+  document.getElementById("popup").style.display = "none";
+  currentLevel++;
+  startTime = Date.now(); // mémorise le début du labyrinthe
+  // Calcul du temps écoulé
+let elapsed = Math.floor((Date.now() - startTime) / 1000); // en secondes
+labyrinthTimes.push(elapsed);
+  if(currentLevel < levels.length){
+    // Charger le niveau suivant
+    currentLabIndex = currentLevel;
+    generateLabyrinth();
+    resizeCanvas();
+    score = 0;        
+    lives = 4;        
+    updateScore();
+    if(currentLevel >= levels.length){
+  let message = "🏆 Tournoi terminé 🏆!\nLes Grenouilles sont éradiquées !!\n\nTemps par labyrinthe :\n";
+  labyrinthTimes.forEach((t,i)=>{
+    let min = Math.floor(t/60).toString().padStart(2,'0');
+    let sec = (t%60).toString().padStart(2,'0');
+    message += `Labyrinthe ${i+1} : ${min}:${sec}\n`;
+  });
+  message += "\nBisous😘";
+  showPopup(message);
+
+  // reset pour nouvelle partie
+  score = 0; lives = 0; currentLevel = 0; currentLabIndex = 0;
+  labyrinthTimes = [];
+  stopGame();
+}
+
+    // Réinitialiser le timer
+    timeRemaining = LEVEL_TIME;
+    timerEl.textContent = 'Temps restant : ' + formatTime(timeRemaining);
+    if(timerInterval) clearInterval(timerInterval);
+    startTimer();
+
+  } else {
+    // Tournoi terminé → reset complet
+    showPopup("🏆 Tournoi terminé 🏆! \nLes Grenouilles sont éradiquées !!\nBisous😘");
+
+    // Réinitialiser tous les paramètres
+    score = 0;
+    lives = 0;
+    currentLevel = 0;
+    currentLabIndex = 0;
+    timeRemaining = LEVEL_TIME;
+    updateScore();
+    timerEl.textContent = 'Temps restant : ' + formatTime(timeRemaining);
+
+    // Réinitialiser le labyrinthe et les fantômes
+    labyrinth = JSON.parse(JSON.stringify(levels[0]));
+    ghosts = [];
+    generateLabyrinth();
+    resizeCanvas();
+
+    // Arrêter la boucle et timer
+    stopGame();
+  }
+}
+/* =======================
+   TOUCH DOUBLE TAP
+======================= */
+let lastTouchEnd = 0;
+document.addEventListener('touchend', function (event) {
+  const now = Date.now();
+  if (now - lastTouchEnd <= 20) event.preventDefault();
+  lastTouchEnd = now;
+}, false);
+
+/* =======================
+   ÉVÉNEMENTS
+======================= */
+startBtn.addEventListener('click',startGame);
+scaleInput.addEventListener('change',()=>{ scale=parseInt(scaleInput.value); resizeCanvas(); });
+document.addEventListener('keydown', handleKeyDown);
+
+mobileUp.addEventListener('click',()=>mobileControl('up'));
+mobileDown.addEventListener('click',()=>mobileControl('down'));
+mobileLeft.addEventListener('click',()=>mobileControl('left'));
+mobileRight.addEventListener('click',()=>mobileControl('right'));
+
+resizeCanvas();
+</script>
+</body>
+</html>
