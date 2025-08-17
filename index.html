@@ -202,6 +202,7 @@ let respawning = false;
 let totalFrogs = 0;
 let scores = [];
 let labyrinthTimes = [];
+let currentMessage = "By JC Prolhac";  // message par défaut
 
 const imgRenard = new Image();
 const imgGrenouille = new Image();
@@ -296,6 +297,14 @@ function drawLabyrinth() {
     }
   }
 }
+  function drawMessage() {
+  ctx.fillStyle = "white";            // couleur du texte
+  ctx.font = "15px monospace";         // police et taille
+  ctx.textAlign = "left";
+  ctx.textBaseline = "middle";
+
+  // Position : centré horizontalement, dernière ligne du labyrinthe
+  ctx.fillText(currentMessage, canvas.width / 2, (rows - 0.5) * scale);
 function drawPlayer() {
   if(imgRenard.complete){ 
     ctx.drawImage(imgRenard, player.xPos, player.yPos, scale, scale); 
@@ -395,7 +404,8 @@ function hitWall(x, y) {
 }
   
 function moveGhosts(){ ghosts.forEach(g=>{ if(g.moving){ const tx=g.x*scale, ty=g.y*scale; g.xPos=g.xPos<tx?Math.min(g.xPos+GHOST_SPEED,tx):Math.max(g.xPos-GHOST_SPEED,tx); g.yPos=g.yPos<ty?Math.min(g.yPos+GHOST_SPEED,ty):Math.max(g.yPos-GHOST_SPEED,ty); if(g.xPos===tx && g.yPos===ty) g.moving=false; } else { const dirs=['left','right','up','down']; let options=dirs.filter(d=>{ let nx=g.x, ny=g.y; if(d==='left') nx--; else if(d==='right') nx++; else if(d==='up') ny--; else if(d==='down') ny++; return canMove(nx,ny); }); if(options.length>1){ const opp={left:'right',right:'left',up:'down',down:'up'}; options=options.filter(d=>d!==opp[g.dir]); if(options.length===0) options=dirs;} if(options.length){ g.dir=options[Math.floor(Math.random()*options.length)]; if(g.dir==='left') g.x--; else if(g.dir==='right') g.x++; else if(g.dir==='up') g.y--; else if(g.dir==='down') g.y++; g.moving=true; } } }); }
-function checkCollision() {
+
+  function checkCollision() {
   if(respawning) return;
   for(const g of ghosts){
     if(player.x === g.x && player.y === g.y){
@@ -423,7 +433,7 @@ function checkCollision() {
   }
 }
 
-function gameLoop(){ ctx.clearRect(0,0,canvas.width,canvas.height); drawLabyrinth(); drawPlayer(); drawGhosts(); movePlayer(); moveGhosts(); checkCollision(); }
+function gameLoop(){ ctx.clearRect(0,0,canvas.width,canvas.height); drawLabyrinth(); drawPlayer(); drawGhosts(); movePlayer(); moveGhosts(); checkCollision(); drawMessage(); }
 
 /* =======================
    TIMER
