@@ -257,6 +257,11 @@ function generateGhosts(){
     ghosts.push({x,y,xPos:x*scale,yPos:y*scale,dir:'left',color:palette[i%palette.length],moving:false});
   }
 }
+  function finishLabyrinth() {
+  finished = true;
+  clearInterval(timerId);
+  console.log("✅ Labyrinthe terminé, chrono arrêté !");
+}
 
 /* =======================
    DESSIN
@@ -347,6 +352,7 @@ function movePlayer(){
 
       if(score >= totalFrogs){
         showPopup("🎉 Bravo, labyrinthe terminé ! \nEt au faite \nON AIME PAS LES GRENOUILLES \n❤️🖤");
+        finishLabyrinth();
       }
     }
   }
